@@ -35,7 +35,7 @@ Each v1 element lands in one bucket:
 | **mapped** | A faithful v2 form exists (block → `part def`, value property → `attribute`, requirement → `requirement def`, state machine → `state def`, activity → `action def`, …) | Review names and types only |
 | **approximated** | Nearest v2 form with a noted difference (e.g. a v1 construct with no v2 equivalent semantics, units and quantity kinds mapped to ISQ/SI, opaque behaviors kept as comments) | Read the note; decide whether the approximation is acceptable |
 | **unmapped** | No v2 form; left out and listed with its v1 type and name | Re-model by hand in v2 |
-| **skipped** | Content not addressed to the model (diagrams, tool-specific stereotypes, layout) | Nothing, unless a diagram should become a `view` |
+| **skipped** | Standard and tool profiles and libraries, the content they mark, and elements nothing in the model refers to | Nothing |
 
 The summary line counts each bucket, e.g. `migration: migrated 93 element(s): 78 mapped,
 12 approximated, 3 unmapped (2 skipped as profile, library or notation-only content, ...)`;
@@ -52,6 +52,9 @@ reviewers see what changed.
 3. Run what migrated: `-instantiate`, `-constraint`, `-state 'Modes obj' -advance N`,
    `-action` (`opensysml-checking`); the migrator maps v1 run configurations and their
    recorded results so you can compare them with the v2 run.
+   Approximations this version writes that `opensysml-modeling-best-practices` shows how to
+   repair: use-case actor lines as connections to the use case (add `actor` parameters), «Trace»
+   as a `/* «Trace» */` comment (make it metadata).
 4. `sysml -validate -strict Vehicle.sysml` for notation other SysML v2 tools will load; the
    migrator can emit nonstandard shorthand that `-strict` flags.
 5. Documents and diagrams: a `document def` rendered with `-render-document ... plantuml cameo`
@@ -61,7 +64,11 @@ reviewers see what changed.
 
 - Profile-specific or tool-specific stereotypes with no SysML v1 standard meaning are
   skipped or unmapped.
-- Diagram layout is not carried; declare `view`s and let OpenSysML render them.
+- A diagram becomes a `view` that exposes what it showed. Its geometry is not in the XMI; pass
+  an MTIP (HUDS XML) export of the same project with `-layout FILE` and the migrator writes
+  `DiagramLayout::Layout`/`Route` metadata into the view (OpenSysML-only; `-portable` inlines
+  the library, `-strict` writes none). Without it, or if you delete the metadata, OpenSysML
+  lays the view out itself and the model is unchanged.
 - Semantics that v2 defines differently (e.g. some activity/state-machine edge cases) are
   approximated; verify behavior by running it rather than by reading the notation.
 - The feature is experimental: mapping rules, the report format and bucket boundaries can

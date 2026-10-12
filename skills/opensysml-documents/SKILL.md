@@ -37,6 +37,8 @@ sysml -graphs Pkg::Rover::Drive -o drive.dot model.sysml     # lowered action/st
   `-render-palette` picks node colours by keyword family; `-render-ports minimal|...`
   controls port detail; `-render-overlay` adds verdicts/runs over requirement renderings;
   `-render-unplaced` places elements a `Layout` omits.
+- Geometry is optional `DiagramLayout::Layout`/`Route` metadata in the view body (OpenSysML-only;
+  the pilot cannot load it) — see `opensysml-modeling-best-practices` for views that stay portable.
 - `-render-link TEMPLATE` makes nodes link to source (`{file}`, `{line}`, `{col}`,
   `{qname}`, `{id}`), useful for HTML output in a repository viewer.
 - Views that depend on a run (`-render-run timeline|sequence` in the REPL) need the run

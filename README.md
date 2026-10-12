@@ -39,6 +39,12 @@ into the location your tool reads (for example `.claude/skills/`, `.agents/skill
 | [opensysml-migrate-v1](skills/opensysml-migrate-v1/SKILL.md) | Migrating SysML v1 (XMI/UML/MagicDraw) models and reading the migration report |
 | [opensysml-troubleshooting](skills/opensysml-troubleshooting/SKILL.md) | Environment variables, budgets, stale services, exit statuses, diagnosing failures |
 
+### Modeling
+
+| Skill | Use when |
+|---|---|
+| [opensysml-modeling-best-practices](skills/opensysml-modeling-best-practices/SKILL.md) | How to model so the result is spec-correct and loads in OpenSysML and the OMG pilot: actors as `actor` parameters, associations as `connection def`s, stereotypes as metadata, asserted constraints, performed actions, typed instances, views with optional layout; repairing a migrated v1 model |
+
 ### Client libraries
 
 | Skill | Package |
