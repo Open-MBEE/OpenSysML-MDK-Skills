@@ -50,7 +50,12 @@ case is a cluster containing one `«actor»` node per actor parameter (`operator
 - `sysml -render 'Subsystems only' -render-form text 04-stereotype-metadata.sysml` →
   `part def Stereotypes::'Vacuum System'` (the one element the `#Subsystem` keyword annotates).
 - `sysml -strict -validate 04-opensysml-library.sysml` → `✓ … no errors`, exit 0: `-strict` does
-  not report OpenSysML-only library imports.
+  not report extension-library imports.
+- With the library handed over (`LIBS=…/internal/workspace/libs/stdlib/OpenSysML Libraries`):
+  `validate-sysml "$LIBS/MigrationMetadata.sysml" 04-opensysml-library.sysml` → exit 0;
+  `validate-sysml 04-opensysml-library.sysml "$LIBS/MigrationMetadata.sysml"` (model first) → exit 1,
+  the same unresolved-reference errors; `validate-sysml-batch --extension-library "$LIBS"
+  04-opensysml-library.sysml` → exit 0.
 - `sysml -help` lists `-strict` and `-portable` (`-portable` only "With -migrate"); there is no
   `-standalone` flag.
 - The vendored `MigrationMetadata.sysml` on this version defines `SynthesizedName`,
@@ -128,6 +133,13 @@ sysml: execution failed: eval performer of c.inc: usage c: performed action inc 
 | `08-views-layout-placed.sysml` | exit 0, no warnings | exit 1: `Couldn't resolve reference to Type 'DiagramLayout::Layout'.`, `… 'DiagramLayout::Route'.`, `… 'DiagramLayout::Canvas'.`, and one per attribute |
 | `08-wrong-ambiguous-name.sysml` | exit 0 (also under `-strict`) | exit 0 |
 
+- `validate-sysml "$LIBS/DiagramLayout.sysml" 08-views-layout-placed.sysml` → exit 0;
+  `validate-sysml 08-views-layout-placed.sysml "$LIBS/DiagramLayout.sysml"` → exit 1; a directory
+  holding copies of both files → exit 1 (alphabetical load order puts the model first);
+  `validate-sysml-batch --extension-library "$LIBS" 08-views-layout-placed.sysml` → exit 0.
+  `cat 08-views-layout-placed.sysml "$LIBS/DiagramLayout.sysml" > inlined.sysml`: `validate-sysml
+  inlined.sysml` → exit 0; `sysml -validate inlined.sysml` → exit 0 with `warning: Root namespace
+  `DiagramLayout` has the name of a standard library package`.
 - `sysml -render 'Microscope Interconnection' -render-form dot` on the two layout files: the
   placed output adds `// layout: neato -n2`, `layout=neato`, two invisible canvas points and
   `pos="…!"` on every node; node and edge lists are identical.

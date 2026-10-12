@@ -66,9 +66,10 @@ reviewers see what changed.
   skipped or unmapped.
 - A diagram becomes a `view` that exposes what it showed. Its geometry is not in the XMI; pass
   an MTIP (HUDS XML) export of the same project with `-layout FILE` and the migrator writes
-  `DiagramLayout::Layout`/`Route` metadata into the view (OpenSysML-only; `-portable` inlines
-  the library, `-strict` writes none). Without it, or if you delete the metadata, OpenSysML
-  lays the view out itself and the model is unchanged.
+  `DiagramLayout::Layout`/`Route` metadata into the view (`DiagramLayout` is an OpenSysML
+  extension library: pass it to other tools with the model, `-portable` inlines it, `-strict`
+  writes none). Without it, or if you delete the metadata, OpenSysML lays the view out itself
+  and the model is unchanged.
 - Semantics that v2 defines differently (e.g. some activity/state-machine edge cases) are
   approximated; verify behavior by running it rather than by reading the notation.
 - The feature is experimental: mapping rules, the report format and bucket boundaries can

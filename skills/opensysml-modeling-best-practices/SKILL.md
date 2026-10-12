@@ -169,17 +169,23 @@ Stereotypes::'Vacuum System'`. With the comment instead
 ([`04-wrong-stereotype-comment.sysml`](references/examples/04-wrong-stereotype-comment.sysml)) the
 filter has nothing to name: `error: unresolved reference: Stereotypes::Subsystem` in both tools.
 
-**Portability.** OpenSysML ships its own library packages (`MigrationMetadata` with
-`SynthesizedName`, `StandIn`, `LibraryNameAvoided`, `DeferredEvent`, `DeferredKeeper`;
-`DiagramLayout`; `StateMachines`; `Stochastic`; `DocumentQueries`). A model that imports one
-analyses clean in OpenSysML and fails in the pilot
-([`04-opensysml-library.sysml`](references/examples/04-opensysml-library.sysml): `Couldn't
-resolve reference to Namespace 'MigrationMetadata'.`). `-strict` does **not** catch this — it
-judges notation (`sysml -strict -validate` exits `0` on that file); there is no `-standalone`
-flag. A hand-written model that must load elsewhere defines its metadata itself, as above; a
-migration uses `sysml -migrate sysml -portable` (inlines the OpenSysML packages the output
-refers to) or `-strict` (writes none of them). The v1 migrator on this version writes «Trace» as
-a dependency with a `/* «Trace» */` comment; replace the comment with metadata as above.
+**Libraries travel with the model.** OpenSysML ships extension libraries the language is meant
+to be extended with (`MigrationMetadata` with `SynthesizedName`, `StandIn`, `LibraryNameAvoided`,
+`DeferredEvent`, `DeferredKeeper`; `DiagramLayout`; `StateMachines`; `Stochastic`;
+`DocumentQueries`; the directory `internal/workspace/libs/stdlib/OpenSysML Libraries/` in the
+OpenSysML tree, maintained upstream at Open-MBEE/OpenSysML-Extensions-Library). Use them, and
+when the file goes to a tool that does not bundle them, hand that tool the library too — the
+pilot only knows the standard library, so on its own
+[`04-opensysml-library.sysml`](references/examples/04-opensysml-library.sysml) fails with
+`Couldn't resolve reference to Namespace 'MigrationMetadata'.` Three ways that pass (§9 has the
+commands): list the library file *before* the model on the `validate-sysml` command line; load the
+whole directory as an extension library with `validate-sysml-batch --extension-library DIR`; or,
+as an option when one file must stand alone, inline the `library package` after the model
+(what `sysml -migrate sysml -portable` does for a migration; `-strict` instead writes no
+extension at all). `-strict -validate` in OpenSysML does **not** report extension-library use
+(exit `0` on that file) — it judges notation; there is no `-standalone` flag. The v1 migrator on
+this version writes «Trace» as a dependency with a `/* «Trace» */` comment; replace the comment
+with metadata as above.
 
 ## 5. Constraints that assert something
 
@@ -298,7 +304,7 @@ view 'Microscope Interconnection' {
 `Views::asInterconnectionDiagram`, `asTreeDiagram`, and the state, action, requirement and
 table renderings `opensysml-documents` lists.
 
-**Layout is optional and OpenSysML-only.** Geometry goes in the view body as
+**Layout is optional and lives in an extension library.** Geometry goes in the view body as
 `metadata DiagramLayout::Layout about <qualified name> { x; y; width; height; }` and
 `metadata DiagramLayout::Route about <qualified name> { points = (…); }`
 ([`08-views-layout-placed.sysml`](references/examples/08-views-layout-placed.sysml)). The DOT
@@ -307,8 +313,8 @@ the nodes and edges are the same. Delete the metadata and the model is unchanged
 out. Two traps: `about` takes qualified names, not feature chains (`about microscope.detector`
 is a parse error in both tools); and the named element must be one the rendering draws, else
 OpenSysML warns `Layout positions part …, which the interconnection rendering of view … does not
-draw as a node` and ignores it. The pilot cannot load a placed file (`Couldn't resolve reference
-to Type 'DiagramLayout::Layout'`) — strip the metadata, or migrate with `-portable`.
+draw as a node` and ignores it. The pilot needs `DiagramLayout` handed to it (§4, §9); alone it
+reports `Couldn't resolve reference to Type 'DiagramLayout::Layout'`.
 
 **Qualify colliding names.** When a definition and a usage share a name across imported
 packages, `expose Detector;` is accepted by both validators and each tool picks one silently —
@@ -325,8 +331,15 @@ OpenSysML's render shows `part def Definitions::Detector`, the first import
 2. The pilot: `./scripts/download-pilot-validator.sh` in an OpenSysML checkout builds
    `build/pilot-validator/validate-sysml`; `validate-sysml model.sysml; echo $?` — `0` clean,
    `1` on errors, GNU `file:line:col: severity: message` on stderr (ignore its `log4j:WARN` and
-   `Reading …` lines). It loads only the standard library, so the file must be self-contained
-   (§4: no OpenSysML library imports, or `-migrate … -portable`).
+   `Reading …` lines). It loads only the standard library, so give it every extension library
+   the model uses, library first: `validate-sysml "$LIBS/DiagramLayout.sysml" model.sysml` (model
+   first, or a directory holding both, leaves the references unresolved — files load in argument
+   order), or `scripts/download-pilot-sysml-validator.sh` and
+   `validate-sysml-batch --extension-library "$LIBS" model.sysml`, where `$LIBS` is
+   `internal/workspace/libs/stdlib/OpenSysML Libraries` in an OpenSysML checkout. To ship one
+   file, append the `library package` to it (`cat model.sysml "$LIBS/DiagramLayout.sysml"`);
+   OpenSysML then warns that the root namespace `DiagramLayout` has a library's name and still
+   analyses it clean. A migration does this with `-migrate … -portable`.
 3. `sysml -strict -validate` for notation no OMG production admits (OpenSysML's `choice`/
    `junction`/`history` shorthand, indistinguishable member names) — not for library use.
 4. Acceptance by either tool is evidence, not proof: `01-wrong-no-actor-parameter.sysml` and
