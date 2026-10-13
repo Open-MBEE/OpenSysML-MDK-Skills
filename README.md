@@ -1,6 +1,7 @@
-# OpenSysML Agent Skills
+# OpenSysML REDK Agent Skills
 
-Skills that teach coding agents to use [OpenSysML](https://github.com/Open-MBEE/OpenSysML)
+Skills that teach coding agents to use the
+[OpenSysML](https://github.com/Open-MBEE/OpenSysML) Runtime Environment and Development Kit (REDK)
 — the `sysml` binary (CLI, REPL, checking, documents, conversion, migration), the
 `sysml-grpc` service, `sysml-lsp`, the Jupyter kernel, the WebAssembly builds — and every
 client library (Go, Python, Node/TypeScript, Java, Rust, Julia, MATLAB/Octave).
