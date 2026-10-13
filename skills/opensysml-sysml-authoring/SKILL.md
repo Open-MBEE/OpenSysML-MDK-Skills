@@ -12,7 +12,9 @@ metadata:
 OpenSysML implements the OMG SysML v2 / KerML 1.1 textual notation. Validate every edit
 with `sysml -validate FILE` (exit `0` clean, `2` errors; see `opensysml-cli`) and read the
 first diagnostic first. `sysml -validate -strict` additionally rejects notation the OMG
-grammars do not admit; use it when the file must also load in other tools.
+grammars do not admit; use it when the file must also load in other tools. This skill is
+about notation the tool accepts; for how to *shape* the model (actors, associations,
+stereotypes, constraints, instances, views) see `opensysml-modeling-best-practices`.
 
 ## Skeleton that validates and runs
 
