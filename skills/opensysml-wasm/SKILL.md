@@ -71,8 +71,9 @@ A refusal names the operation; it is not a defect to report.
 `RenderView` answers with the protojson `RenderViewResponse` the service returns (drawing
 data for a declared view or a `#<kind>:<element>` pseudo-view), so the module advertises
 the `render_view` capability. Exploration, verification, conversion, migration, queries
-and edits are **not** served by these modules (`<Method> is not served by sysml-wasm: it is
-served by sysml-grpc`); they need `sysml-grpc` (`opensysml-service`) or the CLI.
+and edits are **not** served by these modules (`<Method> is not served by sysml-engine`; an
+exploring schedule answers `exploration is not served by sysml-engine: exploring schedules
+are served by sysml-grpc`); they need `sysml-grpc` (`opensysml-service`) or the CLI.
 
 ## Node and browser through `@openmbee/opensysml`
 
