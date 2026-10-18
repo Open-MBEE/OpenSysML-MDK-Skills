@@ -31,8 +31,11 @@ has a small dependency footprint (no gRPC-java runtime). The build needs Maven 3
 
 Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client at
 `client/java` of the same checkout (`0.10.1`; `mvn -pl opensysml-client -am test` green with
-Maven 3.9.11). Anything marked *nightly* needs a service newer than v0.10.1 (nightly builds
-and the release after 0.10.1) and throws `CapabilityException` against a v0.10.1 service.
+Maven 3.9.11). Anything marked *nightly* is a method of the client as well as an RPC of the
+service: an artifact built from the `v0.10.1` tag has no `checkAction` (compile error), and Maven
+Central gets no snapshot — build and `mvn install` from a `develop` checkout (the artifact keeps
+the `0.10.1` version string and replaces a release build in `~/.m2`). A nightly client against a
+v0.10.1 service throws `CapabilityException`.
 
 ```java
 import org.openmbee.opensysml.*;

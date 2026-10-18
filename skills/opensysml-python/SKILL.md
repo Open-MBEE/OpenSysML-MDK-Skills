@@ -42,8 +42,12 @@ print(model.eval("mass", subject="Vehicles::myCar"))   # 1300.0 (plain Python va
 
 Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client installed
 from `client/python` of the same checkout; package version `0.10.1`. Rows marked *nightly*
-need a service newer than v0.10.1 (nightly builds and the release after 0.10.1) and raise
-`MissingCapabilityError` against a v0.10.1 service.
+are methods of the *client* as well as RPCs of the service: the `opensysml==0.10.1` package has
+no `check_action` (`AttributeError`), whatever service it talks to. Install the night's client by
+exact version (`pip install opensysml==<next>.dev<yyyymmdd>`, listed in PyPI's release history;
+`pip install --pre opensysml` takes the newest) — it provisions the same night's `sysml-grpc` —
+or `pip install -e client/python` from a `develop` checkout. A nightly client against a v0.10.1
+service raises `MissingCapabilityError`.
 
 ## `Model` operations
 

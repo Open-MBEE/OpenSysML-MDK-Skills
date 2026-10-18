@@ -22,9 +22,11 @@ needed) and speaks Connect/protobuf to `sysml-grpc`; JSON is only a debugging en
 
 Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the crate at
 `client/rust/opensysml` of the same checkout (`cargo test -p opensysml` green with
-`OPENSYSML_GRPC_BINARY` pointing at that build). Anything marked *nightly* needs a service
-newer than v0.10.1 (nightly builds and the release after 0.10.1) and is refused with
-`Error::MissingCapability` against a v0.10.1 service.
+`OPENSYSML_GRPC_BINARY` pointing at that build). Anything marked *nightly* is a method of the
+crate as well as an RPC of the service: `opensysml = "0.10"` from crates.io has no `check_action`
+(compile error), and crates.io gets no snapshot — use the `git = "…", branch = "develop"` or `path`
+dependency above until the release after 0.10.1. A nightly client against a v0.10.1 service is
+refused with `Error::MissingCapability`.
 
 ```rust
 fn main() -> Result<(), Box<dyn std::error::Error>> {

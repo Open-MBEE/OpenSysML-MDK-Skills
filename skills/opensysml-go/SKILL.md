@@ -55,9 +55,11 @@ func check(ctx context.Context) error {
 - A syntax error is a diagnostic, not an `error`; a missing file is an `error`.
 
 Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build; `go test ./client/opensysml/`
-green). Anything marked *nightly* is absent from a v0.10.1 `sysml-grpc` and arrives in nightly
-builds and the release after 0.10.1; an in-process `New()` client built from the same tree always
-has it, a `Dial`ed one refuses it when the service does not advertise the capability.
+green). Anything marked *nightly* is absent from the module at `v0.10.1` (`@latest`) — the
+methods do not compile there — and from a v0.10.1 `sysml-grpc`; it arrives in nightly builds and the
+release after 0.10.1. Until then `go get github.com/Open-MBEE/OpenSysML@develop` (or a `develop`
+commit): an in-process `New()` client built from that tree always has it, a `Dial`ed one refuses it
+with `unimplemented`/missing-capability when the service does not advertise the capability.
 
 ## Operations on `Client`
 

@@ -46,9 +46,11 @@ conn = opensysml.private('binary', '/path/to/sysml-grpc', 'timeout', 30);   % ex
   returns the last service error struct.
 
 Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the package at
-`client/matlab` of the same checkout. Anything marked *nightly* needs a service newer than
-v0.10.1 (nightly builds and the release after 0.10.1) and raises `opensysml:missingCapability`
-against a v0.10.1 service.
+`client/matlab` of the same checkout. Anything marked *nightly* is a function of the package as
+well as an RPC of the service: `addpath` the `client/matlab` of a `develop` checkout (a `v0.10.1`
+checkout has no `opensysml.checkAction`) and run a service newer than v0.10.1 (nightly builds and
+the release after 0.10.1); a nightly package against a v0.10.1 service raises
+`opensysml:missingCapability`.
 
 ## Parsing and models
 

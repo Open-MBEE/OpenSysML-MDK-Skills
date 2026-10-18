@@ -35,8 +35,12 @@ values is refused) and `language: "kerml"`.
 
 Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client at
 `client/node` of the same checkout (`@openmbee/opensysml@0.10.1`; `npm run build && npm test`
-green). Anything marked *nightly* needs a service newer than v0.10.1 (nightly builds and the
-release after 0.10.1) and throws `MissingCapabilityError` against a v0.10.1 service.
+green). Anything marked *nightly* is a method of the client as well as an RPC of the service:
+`@openmbee/opensysml@0.10.1` has no `checkAction`. Install `npm install @openmbee/opensysml@nightly`
+(the `nightly` dist-tag, `<next>-nightly.<yyyymmdd>.g<commit>`; `latest` stays the release) — its
+platform packages carry the same night's `sysml-grpc` — or depend on `client/node` of a `develop`
+checkout after `npm run build`. A nightly client against a v0.10.1 service throws
+`MissingCapabilityError`.
 
 ## Three ways to reach a service
 

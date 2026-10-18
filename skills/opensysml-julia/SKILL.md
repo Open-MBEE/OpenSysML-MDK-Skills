@@ -35,9 +35,10 @@ end
 several documents into one model.
 
 Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the package at
-`client/julia/OpenSysML` of the same checkout. Anything marked *nightly* needs a service newer
-than v0.10.1 (nightly builds and the release after 0.10.1) and throws `MissingCapabilityError`
-against a v0.10.1 service.
+`client/julia/OpenSysML` of the same checkout. Anything marked *nightly* is a function of the
+package as well as an RPC of the service: `Pkg.develop` it from a `develop` checkout (a `v0.10.1`
+checkout has no `check_action`) and run a service newer than v0.10.1 (nightly builds and the
+release after 0.10.1); a nightly package against a v0.10.1 service throws `MissingCapabilityError`.
 
 ## Connections
 
