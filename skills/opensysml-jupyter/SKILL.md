@@ -29,10 +29,18 @@ Without pip — a binary installed by `install.sh --tools sysml-jupyter-kernel`,
 `make build` — register the kernelspec from the binary itself:
 
 ```bash
-sysml-jupyter-kernel -install              # writes the kernelspec for the current user
+sysml-jupyter-kernel -install              # writes the kernelspec (kernel.json and logos) for the current user
+sysml-jupyter-kernel -install -user -name sysml-dev -display-name "SysML v2 (dev)"   # a second kernelspec beside it
+sysml-jupyter-kernel -install -prefix "$CONDA_PREFIX"   # into an environment's share/jupyter/kernels
 sysml-jupyter-kernel -print-kernelspec     # show the kernel.json instead
-sysml-jupyter-kernel -connection-file F    # how Jupyter starts it; not for manual use
+sysml-jupyter-kernel -connection-file F [-verbose]   # how Jupyter starts it; -verbose logs dropped or failing protocol traffic to stderr
 ```
+
+The kernelspec names the binary's absolute path, `display_name` `SysML v2 (OpenSysML)`,
+`language` `sysml` and `interrupt_mode` `message` (interrupts go over the control channel,
+so Windows is interrupted the same way). Exit statuses: `0` normal shutdown, `1` a channel
+could not be bound, `2` a command-line or connection-file error. Verified with
+`sysml-jupyter-kernel` from `sysml v0.10.1-1266-gdada45c11`.
 
 ## Cells
 
@@ -72,9 +80,13 @@ re-running a definition cell updates the model.
 `%viz [--view=VIEW] [--style=STYLE...] [FORM] NAME...` draws any element without declaring
 a view, in the grammar of the OMG pilot kernel's `%viz`, so pilot notebooks run unchanged.
 `%render VIEW`, `%render-document NAME` and `%render-run timeline|sequence` work as in the
-REPL; the kernel sends Mermaid/Markdown/HTML alongside text and JupyterLab shows the
-richest form it can. Image forms (`dot`, `plantuml`, `d2`) need the matching tool installed
-(`opensysml-documents`).
+REPL; the kernel sends rich MIME types alongside text and JupyterLab shows the richest form
+it can: `%viz` and Mermaid renders as `text/vnd.mermaid` (plus `text/vnd.graphviz`, and
+`image/svg+xml` when Graphviz `dot` is on the kernel's `PATH`), `%render VIEW dot` as
+`text/vnd.graphviz`, `%render VIEW markdown` and `%render-document` as `text/markdown`,
+`%render-document NAME ... html` as `text/html` (the HTML fragment). Other image forms
+(`plantuml`, `d2`) need the matching tool installed (`opensysml-documents`).
+`%explain-code <code>` explains a diagnostic's code in a cell (`opensysml-repl`).
 
 ## Reusing notebooks and files
 
@@ -97,7 +109,8 @@ Parsing a declaration is not interruptible. Restart the kernel to clear everythi
 
 - Kernel not listed: see Install; `jupyter kernelspec list` shows the paths searched.
 - Kernel dies at start: `sysml-jupyter-kernel -version` must run; on a hand-built kernelspec
-  check the `argv` path in `kernel.json` (`-print-kernelspec`).
+  check the `argv` path in `kernel.json` (`-print-kernelspec`); start the server with the
+  kernel's `-verbose` in `argv` to see protocol messages it drops.
 - Output only as text: the front end lacks the Mermaid/HTML renderer; JupyterLab 4 with the
   bundled extension shows them, classic Notebook shows text.
 - Models that validate in a notebook but not from `sysml FILE`: notebooks accumulate state

@@ -23,13 +23,22 @@ sysml model.ttl   -convert sysml -o model.sysml    # RDF → notation
 sysml model.sysml -convert api-json -o model.json  # notation → API JSON
 sysml model.json  -convert sysml -o model.sysml    # API JSON → notation
 sysml model.sysml -convert ttl                     # to stdout
+sysml model.sysml -convert ttl -id uuid            # derived element ids as UUIDs instead of qualified names
 sysml export.dat  -convert sysml -from ttl         # -from names the input format when the extension does not
+sysml model.sysml -convert kerml -o model.kerml    # KerML notation; -o reports: wrote model.kerml (sysml, 580 bytes)
 ```
+
+Verified with `sysml v0.10.1-1266-gdada45c11`; `-id`, `-bundle`/`-unbundle` and `.kpar`
+input are in nightly builds and the release after 0.10.1.
 
 The REPL does the same with `%save model.ttl` / `%save model.json` / `%save model.sysml`,
 and every client exposes `convert(model, "ttl")` (`to_turtle`, `to_api_json`, `to_sysml` in
 Rust; `Convert` RPC over the service, with `ConvertFile`/`ConvertSource` helpers in Go).
-`-from fmu` reads a Functional Mock-up Unit's model description as a model.
+`-from fmu` reads a Functional Mock-up Unit's model description as a model. A SysML v2 API
+branch URL (`flexo://project/branch`, or the endpoint's `https://` URL) is accepted as the
+input or `-o` of `-convert`, with `-sync-state FILE` recording the last-seen commit and the
+token read from `FLEXO_INTEROP_TOKEN`; the live `-sync-diff`/`-sync-apply` change-set
+workflow is summarised in `opensysml-cli`.
 
 ## Rules
 
@@ -45,7 +54,12 @@ Rust; `Convert` RPC over the service, with `ConvertFile`/`ConvertSource` helpers
   values; comments and layout are not guaranteed, and names that needed quoting stay
   quoted. The project keeps a per-file round-trip ratchet over its example corpus
   (`TestCorpusRoundTrip`), so regressions are known, not silent.
+- **Ids**: `-id qualified` (default) spells a derived element id from the qualified name,
+  `-id uuid` as a UUID; pick one and keep it across a pipeline, since the other side keys
+  on it.
 - **Exit status**: `0` written, `2` refused or usage error. Nothing is written on refusal.
+  The experimental notice goes to stderr (`note: RDF conversion — Turtle and the API's JSON
+  element form alike — is experimental: ...`); the output is on stdout or in `-o`.
 - Large models: prefer the file output (`-o`) over stdout, and protobuf transport over JSON
   when converting through the service (`opensysml-service`).
 
@@ -63,6 +77,20 @@ sysml model.sysml -import rows.json -import-format json -import-map mapping.json
 The element column names the element (qualified name) and each other column a feature;
 `-import-map FILE` maps arbitrary headers onto elements/features; `-import-as` chooses
 whether rows set `values` or create elements. REPL: `%import FILE [map FILE]`.
+
+## Project interchange archives (`.kpar`)
+
+A directory holding a `.project.json` is an OMG project-interchange project; `-bundle`
+zips it as a `.kpar` and `-unbundle` unpacks one. Archives are read wherever a project
+directory is (named beside a model, under `-library-root`, as `OPENSYSML_LIBRARY_PATH`):
+
+```bash
+sysml -bundle proj -o widgets.kpar      # wrote widgets.kpar (Widgets 1.0.0, 4 files); without -o: <name>-<version>.kpar
+sysml -unbundle widgets.kpar -o widgets # wrote widgets (Widgets 1.0.0, 4 files)
+sysml -validate model.sysml widgets.kpar
+```
+
+Members are sorted and carry a fixed timestamp, so bundling twice gives the same bytes.
 
 ## Checking a conversion
 
