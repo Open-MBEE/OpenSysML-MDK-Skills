@@ -42,8 +42,9 @@ sysml -graphs Pkg::Rover::Drive -o drive.json model.sysml    # lowered action/st
 ```
 
 - `-render-form`: `text`, `mermaid`, `markdown`, `dot`, `plantuml`, `d2`, `csv`, `tsv`
-  (`csv`/`tsv` for a table or matrix); the default comes from the `-o` extension, Mermaid
-  on stdout. Graph forms are source for Mermaid/Graphviz/PlantUML/D2, which
+  (`csv`/`tsv` for a table or matrix); the default comes from the destination for `-render`
+  (the `-o` extension; Mermaid on stdout) and is each kind's machine form for `-render-all`.
+  Graph forms are source for Mermaid/Graphviz/PlantUML/D2, which
   `-doc-form html|pdf` turns into images when the tool is installed; a tree asked for as
   `svg` is refused (`a tree rendering is not written as svg; ask for text, mermaid, dot,
   plantuml or d2`).
