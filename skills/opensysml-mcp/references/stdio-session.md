@@ -160,6 +160,17 @@ A path that leaves the root:
 ← {"content":[{"type":"text","text":"no such session: \"probe\" (session_list names the open ones; session_open opens another)"}],"isError":true}
 ```
 
+## `migrate`
+
+```json
+→ {"name":"migrate","arguments":{"filePath":"models/v1.xmi","toFormat":"sysml","report":true}}
+← "content":[{"type":"text","text":"notice: SysML v1 migration is experimental: …\nmigrated 4 element(s): 3 mapped, 1 approximated, 0 unmapped …"}],
+  "structuredContent":{"fromFormat":"xmi","toFormat":"sysml","experimental":true,"experimentalNotice":"SysML v1 migration is experimental: …",
+     "content":"package v1 {\n    part def Pump {\n        part valve : Valve;\n    }\n    part def Valve;\n}\n","files":[],"report":{…},"results":"","error":""}
+```
+
+The migrated notation is `structuredContent.content`; nothing is written to disk.
+
 ## Workspace (`lsp`) tools
 
 ```json

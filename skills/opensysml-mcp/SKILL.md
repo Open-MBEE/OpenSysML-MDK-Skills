@@ -20,7 +20,9 @@ Verified against `sysml-mcp v0.10.1-1266-gdada45c11` (a `develop` build). `sysml
 in the v0.10.1 release: it comes with the release after 0.10.1, and with the nightly snapshots
 once they build a `develop` commit that carries it (the 2026-10-18 nightly, built from an
 earlier commit, did not list a `sysml-mcp-*` asset in its `SHA256SUMS.txt`; check the nightly's
-manifest before pinning `--version nightly`). Until then, `go install` or `make build-mcp`.
+manifest before pinning `--version nightly`). Until then, build it from `develop`:
+`go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@develop` or `make build-mcp` in a
+checkout — `@latest` resolves to the v0.10.1 module, which has no `cmd/sysml-mcp`.
 
 ## Install
 
@@ -33,8 +35,13 @@ does not include it:
 ```bash
 curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools sysml,sysml-lsp,sysml-mcp
 curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools all                     # everything the release published
-go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@latest                        # from source
+go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@develop                       # from source: the develop head (a v0.10.2-0.<date>-<commit> pseudo-version)
 ```
+
+A `go install` binary prints `sysml-mcp dev` / `Commit: unknown` for `-version` (no version
+ldflags); `make build-mcp` stamps the version. `go install …@latest` works once a tagged
+release contains `cmd/sysml-mcp`; today it picks v0.10.1 and fails with `module github.com/Open-MBEE/OpenSysML@latest found (v0.10.1), but does
+not contain package github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp`.
 
 `--tools all` resolves against the release's `SHA256SUMS.txt`, so on v0.10.1 it installs the
 four tools that release published and says it lacks `sysml-mcp`; naming `sysml-mcp` explicitly
@@ -206,7 +213,10 @@ its diagnostics. Values are protojson `Value` arms: `{"realValue": 50.0}`, `{"in
   a code with its specification clause.
 - `migrate`: a v1 `.xmi`/`.uml`/`.mdzip` by `filePath` (or base64 `content` + `fromFormat`) to
   `toFormat` (`sysml`, `kerml`, `ttl`, `api-json`, …), with `report`, `results`, `layoutPath`,
-  `imageBaseUrl`, `strict`; a missing file answers `NOT_FOUND: file not found: …`.
+  `imageBaseUrl`, `strict`. The migrated model comes back *in the answer*: `content` holds the
+  notation (`files` when it is several documents), `report` the per-element verdicts when asked,
+  `experimentalNotice` the status text; nothing is written and no session is touched. A missing
+  file answers `NOT_FOUND: file not found: …`.
 
 ## Which tool for the job
 
@@ -222,7 +232,7 @@ its diagnostics. Values are protojson `Value` arms: `{"realValue": 50.0}`, `{"in
 | Render a view | `render_view {"path": "models/x.sysml", "view": "P::v", "form": "mermaid"}` (also `#tree:P::Part`, `dot`, `plantuml`, `d2`, `text`, `csv`); `render_model_view` for the data form; `views` lists what a document can draw |
 | Render a document | `documents`, then `render_document` (Markdown over the workspace) or `render_model_document` (`-render-document`) |
 | Convert | `convert` between notation, Turtle and API JSON (`-convert`) |
-| Migrate a v1 model | `migrate {"filePath": "model.xmi", "toFormat": "sysml", "report": true}`; then `session_save`/your editor writes the text; `compare_results` for the v1 tool's recorded runs |
+| Migrate a v1 model | `migrate {"filePath": "model.xmi", "toFormat": "sysml", "report": true}` → `content` is the SysML v2 text: write it to a file with your editor (or `session_open` + `session_submit {"text": content}` + `session_save {"path": …, "apply": true}`; `session_save` alone writes the session's model, not `migrate`'s answer); read `report`; `compare_results` for the v1 tool's recorded runs |
 | Edit by operation | `apply_model_edit` (workspace, `setValue`/`rename`/`addMember`/…, writes with `apply`), `rename`, `format`; `apply_edits` for a parsed model's edited notation |
 | Explore interactively | `session_open`, `session_load`, `session_submit`, `session_eval`, `session_run`, `session_print`, `session_save … apply` |
 

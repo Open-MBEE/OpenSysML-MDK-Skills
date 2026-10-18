@@ -95,8 +95,11 @@ build (`sysml v0.10.1-1266-gdada45c11`).
    go install github.com/Open-MBEE/OpenSysML/cmd/sysml@latest
    go install github.com/Open-MBEE/OpenSysML/cmd/sysml-lsp@latest
    go install github.com/Open-MBEE/OpenSysML/cmd/sysml-grpc@latest
-   go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@latest
+   go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@develop   # @latest only once a release after 0.10.1 carries cmd/sysml-mcp
    ```
+   `@latest` is the newest tagged module (v0.10.1); a command that tag lacks fails with `does
+   not contain package …`. `@develop` builds the `develop` head as a pseudo-version
+   (`v0.10.2-0.<date>-<commit>`); `@<commit>` pins one.
 
 5. **From a checkout.**
    ```bash
