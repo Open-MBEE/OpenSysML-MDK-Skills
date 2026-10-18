@@ -14,7 +14,7 @@ metadata:
 opensysml = "0.10"               # crates.io release (0.10.1), pinned to the matching sysml-grpc release
 # development against a checkout:
 # opensysml = { path = "../OpenSysML/client/rust/opensysml" }
-# opensysml = { git = "https://github.com/Open-MBEE/OpenSysML.git", branch = "main" }
+# opensysml = { git = "https://github.com/Open-MBEE/OpenSysML.git", branch = "develop" }   # nightly methods
 ```
 
 The API is **blocking** (no async runtime required; wrap in `spawn_blocking` from Tokio if

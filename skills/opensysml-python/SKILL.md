@@ -114,6 +114,10 @@ ir = imp.import_data([("fleet.csv", "element,count,label\nV::vehicle,7,fast\nV::
 ir.files        # [ImportedFile('fleet.csv', values=3, elements=2)]; ir.content is the edited source
 imp.import_data([("fleet.tsv", "element\tcount\nV::vehicle\t7\n")], dry_run=True).model_hash   # ''
 
+results_json = json.dumps({"source": "probe.xmi", "configurations": [{
+    "id": "_c1", "name": "Cfg::'Group 1'", "runs": 2, "target": "target", "behavior": "run",
+    "resultLocation": "Results", "observables": ["total"],
+    "snapshots": [{"id": "_r1", "values": {"total": 3}}, {"id": "_r2", "values": {"total": 5}}]}]})
 cmp = conn.load("conformance/fixtures/probe.sysml").compare_results(results_json, seed=7)
 cmp.source, str(cmp.configurations[0])[:60]
 # ('probe.xmi', "compare Cfg::'Group 1' — 2 stored run(s) in Results; 2 run(s)")

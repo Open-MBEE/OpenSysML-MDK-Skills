@@ -154,8 +154,12 @@ Most calls after `ParseFile` take the returned `modelHash`, e.g.
 - Client says the service is stale (`StaleServiceError`): the binary predates the
   client's pinned version; upgrade the service or set `OPENSYSML_GRPC_BINARY` to a
   matching build (`opensysml-install`).
-- HTTP 404 from curl, or `MissingCapabilityError` from a client, on a method in the table
-  above: the service is v0.10.1 or older; use a nightly build.
+- HTTP 404 `page not found` from curl on `CheckBehavior`, `RunRuns`, `SelfCheck`, `RecordRun`,
+  `ImportData` or `CompareResults`, or `MissingCapabilityError` from a client: the service is
+  v0.10.1 or older; use a nightly build. The nightly *fields* on existing procedures
+  (`disableLint`, `advance`, `toolDryRun`, `probe`, `show`, `depth`, …) are not refused by an
+  older service over JSON — they are silently ignored, so check the capability list, not the
+  status code.
 - Verification calls hang or exit with `resource_exhausted`: raise/lower the
   `OPENSYSML_MAX_*` budgets in the *service's* environment, not the client's.
 - SMT-backed calls report no solver: `OPENSYSML_SMT` must be set where `sysml-grpc` runs.
