@@ -1,6 +1,6 @@
 ---
 name: opensysml-julia
-description: Use the Julia package `OpenSysML` (client/julia/OpenSysML in the OpenSysML repo, Connect-JSON over HTTP.jl) to parse, validate, evaluate, verify, execute, analyse, render, convert and edit SysML v2 models from Julia — `connect()`, `external(address)`, `private()`, binary provisioning variables, capability negotiation and typed errors. Use when scripting OpenSysML from Julia, Pluto or DrWatson projects.
+description: Use the Julia package `OpenSysML` (client/julia/OpenSysML in the OpenSysML repo, Connect-JSON over HTTP.jl) to parse, validate, evaluate, verify, execute, analyse, model-check, run Monte Carlo samples, self-check, record runs, import data, compare tool results, render, convert and edit SysML v2 models from Julia — `connect()`, `external(address)`, `private()`, binary provisioning variables, capability negotiation and typed errors. Use when scripting OpenSysML from Julia, Pluto or DrWatson projects.
 license: Apache-2.0
 metadata:
   project: OpenSysML
@@ -33,6 +33,11 @@ end
 
 `parse_source(conn, text)` parses a string; `parse_sources(conn, Dict(name => text))` parses
 several documents into one model.
+
+Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the package at
+`client/julia/OpenSysML` of the same checkout. Anything marked *nightly* needs a service newer
+than v0.10.1 (nightly builds and the release after 0.10.1) and throws `MissingCapabilityError`
+against a v0.10.1 service.
 
 ## Connections
 
@@ -68,7 +73,33 @@ Functions take the model (or connection) first, Julia-style keywords for options
 `convert_model(model, "ttl")`/`to_turtle`/`to_api_json`/`to_sysml`/`save(model, path)`,
 `convert_file`/`convert_source`, `list_engines(conn)`, `server_info(conn)`,
 `has_capability(conn, name)`. Verdicts answer `holds`, `violated`, `undecided`, `valid`;
-runs expose `failures`.
+runs expose `failures`. A case's `VerificationVerdict` carries `instance_id`/`instance_type_id`
+for the object it ran on (`0`/`""` when none; *nightly*).
+
+Rendering: `render_document(model, id; form="markdown")` → `String`;
+`render_view(model, name; ports="minimal", show=String[])` → `RenderedView` whose `shown`
+lists what was drawn and `notices` says why a rendering is empty. *Nightly:* `show` adds
+optional notation elements (`"parameter-symbols"`, `"port-symbols"`, `"compartments"`,
+`"edge-labels"`, `"keywords"`, `"multiplicities"`, `"typings"`, `"qualifiers"`, `"all"`).
+The Julia client has no `depth` keyword, no lint selection on `diagnostics`, no
+`advance`/`seed`/`draws`/`clock_step` on `execute_action`/`execute_state`, no
+`tool_dry_run` on `run_analysis` and no `probe` on `list_engines`; use `curl` against the
+service for those request fields (`opensysml-service`).
+
+## Checking, runs, recording, import and comparison (nightly)
+
+| Need | Call |
+|---|---|
+| Model checking (`CAPABILITY_CHECK`) | `check_action(model, id; inputs=Dict(), performer, properties=(), diverge=(), free_inputs=(), assume=(), witness=false, depth=0, states=0, unroll=0, timeout=0.0, engine)`, `check_state_machine(model, id; kwargs...)` → `CheckResult` (`verdict` `"holds"`/`"fails"`/`"undecided"`, `lines`, `search`, `violations`, `divergences`, `finals`, `witness`, `standing`, `reason`; `holds(result)`) |
+| Repeated runs / Monte Carlo (`CAPABILITY_RUNS`) | `run_runs(model; action=id` or `analysis=id, runs=1, seed=nothing, draws=nothing, clock_step=0.0, observe=(), inputs=Dict(), performer, subject, arguments=Any[], named_arguments=Dict(), engine)` → `RunsResult` (`rows`, `observables`, `distributions`, `outputs`, `verdicts`, `unconcluded`, `seed`, `standing`); unseeded random runs are refused |
+| Self-check (`CAPABILITY_SELF_CHECK`) | `self_check(model; packages=())` → `SelfCheckResult` (`status`, `findings`, `elements`, `checks`, `violations`, `unevaluated`, `evaluation_errors`, `applications`, `summary`) |
+| Record a run (`CAPABILITY_RECORD_RUN`) | `record_run(model, case_id; subject, arguments=Any[], named_arguments=Dict(), into=nothing, ranges=nothing, runs=0, seed=nothing, engine)` → `Recording` (`run`/`sweep`/`sample`, `package`, `definition`, `records`, `source`, `content`, `documents`, `model_hash`) |
+| Data import (`CAPABILITY_IMPORT_DATA`) | `import_data(model, imports; dry_run=false, accept_documents=false)` → `ImportResult` (`files`, `documents`, `content`, `model_hash`, `changed`) |
+| Compare tool results (`CAPABILITY_COMPARE_RESULTS`) | `compare_results(model, results_json; actions=(), runs=0, seed=nothing, draws="", clock_step=nothing, observe=(), engine)` → `Comparison` (`source`, `configurations`, `standing`) |
+
+Every capability name has an exported `CAPABILITY_*` constant (also
+`CAPABILITY_RENDER_DOCUMENT_FILE_NAME`, whose `file_name` this client does not surface);
+`opensysml-service` lists what a v0.10.1 service and a nightly one advertise.
 
 Values map to Julia types: `Float64`, `Int64`/`BigInt`, `Rational`, `Bool`, `String`,
 `Vector`, plus exported structs `Quantity` (with `Unit`; `in_unit`, `to_unit`,
