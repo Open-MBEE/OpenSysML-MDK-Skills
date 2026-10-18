@@ -1,6 +1,6 @@
 ---
 name: opensysml-lsp
-description: Wire the `sysml-lsp` language server into editors and coding agents — VS Code (opensysml-sysml.vsix), OpenCode, Neovim or any LSP client — over stdio, configure strict conformance and lint settings, and understand the experimental methods (rendering, document rendering, stdlib content, model edits, debugging). Use when setting up SysML v2 editing support, when an agent harness should get live diagnostics for .sysml/.kerml files, or when the server starts but reports nothing.
+description: Wire the `sysml-lsp` language server into editors and coding agents — VS Code (opensysml-sysml.vsix), OpenCode, Neovim or any LSP client — over stdio, configure strict conformance, lint and library-root settings, let it find the installed projects a `.project.json` or `.kpar` project uses, and understand the experimental `opensysml/*` methods (rendering, document rendering, stdlib content, model edits, debugging). Use when setting up SysML v2 editing support, when an agent harness should get live diagnostics for .sysml/.kerml files, or when the server starts but reports nothing. An agent that wants tools to call rather than an editor protocol uses `sysml-mcp` (see opensysml-mcp).
 license: Apache-2.0
 metadata:
   project: OpenSysML
@@ -16,16 +16,28 @@ workspace and resolves names across all its files, so cross-file references work
 editor even though the CLI loads only the files named.
 
 Install it with any route in `opensysml-install` (`--tools sysml-lsp`); the Go route is
-`go install github.com/Open-MBEE/OpenSysML/cmd/sysml-lsp@latest`.
+`go install github.com/Open-MBEE/OpenSysML/cmd/sysml-lsp@latest`. Verified against
+`sysml-lsp v0.10.1-1266-gdada45c11` (a `develop` build); `-library-root`, the `libraryRoots`
+setting and project-interchange dependency discovery are in nightly builds and the release
+after 0.10.1, not in v0.10.1.
+
+Coding agents: an LSP client gives an agent *diagnostics as it edits*. An agent that should
+*call* OpenSysML — validate, evaluate, run, render, migrate, keep a REPL session — gets the
+same workspace and more as MCP tools from [`sysml-mcp`](../opensysml-mcp/SKILL.md).
 
 ## Command line
 
 ```bash
-sysml-lsp --stdio                 # the only transport; clients spawn it and talk JSON-RPC on stdio
-sysml-lsp --stdio -strict         # strict OMG conformance for every document
-sysml-lsp --stdio -no-record-cache
-sysml-lsp -version
+sysml-lsp                         # what an editor runs; -stdio names the only transport for clients that insist
+sysml-lsp -strict                 # strict OMG conformance for every document
+sysml-lsp -no-record-cache        # parse everything, read and write no interface record (also OPENSYSML_RECORD_CACHE=0)
+sysml-lsp -library-root /path/to/store   # where installed projects are, besides the project's own .sysand/lib; repeatable or PATH-separated
+sysml-lsp -version                # sysml-lsp v0.10.1-…; -help, -man
 ```
+
+`-library-root` adds to `OPENSYSML_LIBRARY_ROOTS`; a client can also send the `libraryRoots`
+setting (below). Exit status 0 when the client shut down or closed the stream, 1 on an exit
+without shutdown or a protocol error, 2 when the command line could not be acted on.
 
 ## Settings (sent by the client, `sysml` section)
 
@@ -34,6 +46,29 @@ sysml-lsp -version
 | `sysml.strictConformance` (bool) | Same as `-strict`; `nonstandard-notation` becomes an error |
 | `sysml.disabledLints` (string[]) | Lint codes to drop, e.g. `["undeclared-signal"]` |
 | `sysml.enabledLints` (string[]) | Opt-in lints to report, e.g. `["rounded-real-literal"]` |
+| `sysml.libraryRoots` (string[]) | Directories to look for installed projects under, besides the workspace project's `.sysand/lib`; relative to each workspace folder; a root may hold directories or `.kpar` archives at any depth. Replaces the list; `[]` drops the extra roots and re-indexes |
+
+Each setting is read from `initialize`'s `initializationOptions` and from
+`workspace/didChangeConfiguration`, in three shapes:
+`{"strictConformance": true}`, `{"sysml": {"strictConformance": true}}` or
+`{"sysml.strictConformance": true}`. A value of the wrong type is ignored; a lint code naming no
+lint is shown to the client as an error.
+
+## Projects and installed dependencies
+
+A workspace folder holding a `.project.json` (the OMG project interchange project file, KerML
+1.0 §10.3: `name`, `publisher`, `version`, `usage` entries whose `resource` IRIs name the
+projects it uses) is a project. The server reads it — never a lock file, never the network —
+and indexes the installed projects its usages select so their names resolve in the editor,
+looking under the project's well-known library directory (`.sysand/lib` for a `sysand`
+project) and under every directory `-library-root`, `OPENSYSML_LIBRARY_ROOTS` or the
+`libraryRoots` setting names. An installed project is matched by its own `.project.json`
+(publisher and name against the usage's resource IRI, the exact `versionConstraint` version
+when one is named, else the latest installed), and its usages are followed in turn. A project
+may be a directory or a project interchange archive (`.kpar`), read from memory and indexed
+as `<archive>.kpar/<member>`; a malformed archive is a diagnostic on its path. The standard
+library's `*.kpar` usages are answered by the bundled library. The CLI does the same
+(`sysml -validate proj`, `sysml -library-root …`); see `opensysml-cli`.
 
 Environment variables apply as for the CLI (`OPENSYSML_LIBRARY_PATH`, budgets; see
 `opensysml-troubleshooting`).
@@ -104,15 +139,18 @@ vim.lsp.enable("sysml_lsp")
 Any client that can run a stdio server works the same way (Helix, Emacs `eglot`, Zed, Sublime
 LSP): command `sysml-lsp --stdio`, language ids `sysml` and `kerml`.
 
-## Experimental methods (`$/sysml/...`)
+## Experimental methods (`opensysml/...`)
 
-The server exposes extensions for tooling — rendering a view or document to
-Markdown/Mermaid/HTML, serving standard-library source for navigation, applying model
-edits, debugging actions/states (stepping, events), cross-document layout, palettes,
-forms, styles and port display. They are documented with request/response shapes in
+The server exposes extensions for tooling: `opensysml/render` (a view of a document as
+Mermaid, dot, PlantUML, D2, text or a table), `opensysml/views`, `opensysml/documents`,
+`opensysml/renderDocument`, `opensysml/stdlibContent` (standard-library source for
+navigation), `opensysml/applyModelEdit` (edits by operation on elements), the
+`opensysml/renderChanged` notification and the `opensysml/debug/*` requests (stepping actions
+and state machines, events). They are documented with request/response shapes in
 `docs/reference/lsp.md` of the OpenSysML repository and are used by the VS Code extension;
 treat them as unstable and check the server version (`sysml-lsp -version`) before relying
-on one.
+on one. The same operations are plain MCP tools (`render_view`, `views`, `documents`,
+`render_document`, `apply_model_edit`, `debug_*`) in `sysml-mcp`.
 
 ## Troubleshooting
 
@@ -123,5 +161,8 @@ on one.
   open the folder containing all files, not a single file.
 - Different verdicts from the CLI: strict mode or lint settings differ; align
   `sysml.strictConformance` with `-strict`.
+- Names from an installed dependency unresolved: the project's `.project.json` usage does not
+  match the installed project's own `.project.json` (publisher/name slug, version), or the
+  store is not a well-known directory; name it with `-library-root` or `libraryRoots`.
 - Stale results after installing a new binary: restart the server (the client caches the
   process); `-no-record-cache` disables the on-disk record cache if it looks corrupt.
