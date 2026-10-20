@@ -17,11 +17,20 @@ with `wasm_exec.js`). Releases attach them; a checkout builds them:
 make build-wasm            # both targets → bin/wasm/{wasip1,js}/*.wasm
 make build-wasm-wasip1     # or one
 make build-wasm-js         # also copies bin/wasm/js/wasm_exec.js, the runtime a page includes
-make build-wasm-prod       # smaller sysml-prod.wasm (-tags sysml_prod)
+make build-wasm-re         # smaller RE build of sysml: bin/wasm/{js,wasip1}/re/sysml.wasm (-tags sysml_re)
 ```
 
 Modules: `sysml`, `sysml-lsp`, `sysml-grpc`, `sysml-engine`, `sysml-syntax`, `sysml-core`,
-`sysml-wasm`. The module and `wasm_exec.js` must come from the same Go toolchain.
+`sysml-wasm`. The module and `wasm_exec.js` must come from the same Go toolchain. The
+**RE** (Runtime Environment) build of `sysml` leaves out SysML v1 migration, repository
+sync, `-compile`, the HTML and PDF document forms, FMU import, profiling and the REPL's
+`%features … json`; a flag of a left-out group is hidden from `-help` and refused with
+status 2 (`make build-re` is the native counterpart, `bin/re/sysml`). Releases publish
+`sysml-wasm.wasm` with its `wasm_exec.js` (the npm package `@openmbee/opensysml-wasm`) and
+`sysml-prod.wasm.gz`, the gzip-compressed browser build of the `sysml` REPL the project's
+site runs (about 13 MB; 54 MB inflated), which is not a JSON-RPC module. Verified with
+`sysml v0.10.1-1266-gdada45c11`; the `build-wasm-re` name and `RenderView` are in nightly
+builds and the release after 0.10.1.
 
 ## Running the CLI/REPL/LSP as WASM
 
@@ -54,14 +63,17 @@ A refusal names the operation; it is not a defect to report.
 
 | Module | Serves | Use |
 |---|---|---|
-| `sysml-engine` | `ParseSources`, `Evaluate`, `Instantiate`, `ExecuteAction`, `ExecuteState`, `GetServerInfo` over JSON-RPC 2.0 with `Content-Length` frames | Execution without a service |
+| `sysml-engine` | `ParseSources`, `Evaluate`, `Instantiate`, `ExecuteAction`, `ExecuteState`, `RenderView`, `GetServerInfo` over JSON-RPC 2.0 with `Content-Length` frames | Execution without a service |
 | `sysml-syntax` | `Parse`, `Format`, `Tokens` | Editors, highlighters, formatters |
 | `sysml-core` | Parsing, diagnostics, symbol facts | Validation-only hosts |
-| `sysml-wasm` | Union of core + engine: `ParseFile`, `ParseSources`, `GetDiagnostics`, `GetSymbol`, `Evaluate`, `Instantiate`, `ExecuteAction`, `ExecuteState`, `GetServerInfo` | What the Node/browser client embeds |
+| `sysml-wasm` | Union of core + engine: `ParseFile`, `ParseSources`, `GetDiagnostics`, `GetSymbol`, `Evaluate`, `Instantiate`, `ExecuteAction`, `ExecuteState`, `RenderView`, `GetServerInfo` | What the Node/browser client embeds |
 
-Exploration, verification, rendering, conversion, migration, queries and edits are **not**
-served by these modules (`<Method> is not served by sysml-engine`); they need `sysml-grpc`
-(`opensysml-service`) or the CLI.
+`RenderView` answers with the protojson `RenderViewResponse` the service returns (drawing
+data for a declared view or a `#<kind>:<element>` pseudo-view), so the module advertises
+the `render_view` capability. Exploration, verification, conversion, migration, queries
+and edits are **not** served by these modules (`<Method> is not served by sysml-engine`; an
+exploring schedule answers `exploration is not served by sysml-engine: exploring schedules
+are served by sysml-grpc`); they need `sysml-grpc` (`opensysml-service`) or the CLI.
 
 ## Node and browser through `@openmbee/opensysml`
 
@@ -76,7 +88,8 @@ const model = await connection.loads("package Demo { part def Car { attribute m 
 console.log(model.ok, await model.eval("Demo::c.m"));
 ```
 
-- Supply your own module with `connectWasm({ wasm: "./sysml-wasm.wasm", wasmExec: "/path/wasm_exec.js" })`.
+- Supply your own module with `connectWasm({ wasm: "./sysml-wasm.wasm", wasmExec: "/path/wasm_exec.js" })`;
+  the package's files are `@openmbee/opensysml-wasm/sysml-wasm.wasm` and `wasm_exec.js`.
 - `thread: "inline"` runs Go on the calling thread (blocks it during calls; needed where
   workers are unavailable). Worker deadlines reject the call but cannot interrupt Go.
 - Browser: `import { connectWasm } from "@openmbee/opensysml/browser"` and pass a module
@@ -90,5 +103,6 @@ console.log(model.ok, await model.eval("Demo::c.m"));
 
 Use WASM when there is no place to run a process or no network (browser-only tools,
 sandboxes, edge functions) and the needed operations are parse/validate/evaluate/
-instantiate/execute. Use `sysml-grpc` (native) for verification engines, conversion,
-rendering, migration, SMT and anything that needs the filesystem or external tools.
+instantiate/execute/render a view. Use `sysml-grpc` (native) for verification engines,
+conversion, documents, migration, SMT and anything that needs the filesystem or external
+tools.

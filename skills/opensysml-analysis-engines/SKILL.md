@@ -35,6 +35,9 @@ sysml -engines            # table: name, kind, protocol, authority, answers, sta
 sysml -engines -probe     # also start each external engine, compare its `describe` to the manifest
 ```
 
+Verified with `sysml v0.10.1-1266-gdada45c11`; a `tool:` engine's manifest details follow
+the table (`tool:fmi: tool`).
+
 ```text
 engine    kind      protocol  authority  answers                     status
 check     built-in  -         bounded    outcomes, holds, sensitive  ready
@@ -56,12 +59,20 @@ tool:fmi  tool      fmi/1     observed   compute                     unavailable
   (`-check-input`, `-check-assume`, `-check-unroll`); *proved*, or *not covered* on
   `unknown`. Status shows the solver found (`OPENSYSML_SMT=/path/to/z3`, `opensysml-install`).
 - `sweep` — `-sweep 'x=1..10:1' -samples N -seed S -draws <policy>` tables; *observed*.
+  `-runs N -seed S -observe x` (nightly builds and the release after 0.10.1) repeats one
+  action or a `Simulation::MonteCarlo` analysis and distributes each observable
+  (`standing: table (observed: N rows)`); `-clock-step S` fixes the clock's step.
 - `tool:fmi` — evaluates a `calc def` imported from an FMU through `OPENSYSML_FMI_RUNNER`
-  (a `fmpy`-based runner program); see `docs/reference/fmi.md`.
+  (a `fmpy`-based runner program); see `docs/reference/fmi.md`. `-tool-dry-run CALL`
+  shows what any `ToolExecution`-annotated case or action would hand its tool (manifest,
+  argv, environment, stdin, reply mapping) without starting it; `no ToolExecution-annotated
+  action was reached; nothing to preview` when the call names none.
 
 The REPL equivalents are `%engines`, `%engines probe` and `%engine <name>`; the service
-exposes `ListEngines` and an `engine` field on verification requests; clients pass
-`engine=` / `WithEngine(...)` (`opensysml-service`, library skills).
+exposes `ListEngines` and an `engine` field on verification requests, and (nightly) takes
+the run options too — `advance`, `seed`, `draws`, `clock_step` on execution requests,
+`tool_dry_run` on `RunAnalysis`, `RunRuns` for `-runs`; clients pass `engine=` /
+`WithEngine(...)` (`opensysml-service`, library skills).
 
 ## Selecting an engine
 
@@ -77,7 +88,7 @@ sysml -engine check -action Rover::Drive -instantiate Rover::r1 \
 - `auto`: the engine of highest authority that covers the question answers; one that
   refuses or answers *not covered* is passed over for the next (each kept in the `plan`).
   External engines are reached only after every built-in engine refused.
-- `-engine <name>`: that engine alone; its refusal **is** the verdict (exit 2,
+- `-engine tool:<name>` names one external tool engine; `-engine <name>`: that engine alone; its refusal **is** the verdict (exit 2,
   `? … could not be evaluated … standing: not covered (explore refused: explore does not
   answer evaluate questions)`). Match the engine to the question kinds it `answers`.
 - `-engine all`: composes — a witnessed violation beats any universal claim; agreeing
@@ -121,7 +132,8 @@ as such. Full protocol, result shape, failures and bounds: `docs/reference/exter
 |---|---|
 | `standing: not covered (… refused …)` | Wrong engine for the question; use `auto` or one whose `answers` include it |
 | `not covered (solver answered unknown)` | Increase `-check-timeout`/`-check-unroll`, simplify the constraint, or accept `check`'s bounded answer |
-| `(reached)` in the standing | Budget hit: raise `-check-depth`/`-check-states`/`explore:runs=`; the claim is only observed/bounded |
+| `(reached)` in the standing | Budget hit: raise `-check-depth` (10000 under `check`, 40 under `smt`)/`-check-states` (1000000)/`explore:runs=`; the claim is only observed/bounded |
+| `x = 1 (order-dependent; 2 choice points — explore shows the set)` | The `run` engine's value stands on an unordered choice; `-schedule explore` tables every outcome with `standing: outcomes (proved over schedules: …)` |
 | `unavailable: … z3 …` | Install Z3 or cvc5 and set `OPENSYSML_SMT`; `smt`/`solve` then show `ready (z3 at …)` |
 | `unavailable: OPENSYSML_FMI_RUNNER is not set` | Only matters for FMU-backed calcs; set the runner or ignore |
 | Exit 2 with `?` verdicts in CI | Undecided is not false — decide whether the gate needs a stronger engine or should treat undecided as failure (`opensysml-checking`) |
