@@ -3,7 +3,8 @@
 Skills that teach coding agents to use the
 [OpenSysML](https://github.com/Open-MBEE/OpenSysML) Runtime Environment and Development Kit (REDK)
 — the `sysml` binary (CLI, REPL, checking, documents, conversion, migration), the
-`sysml-grpc` service, `sysml-lsp`, the Jupyter kernel, the WebAssembly builds — and every
+`sysml-grpc` service, `sysml-lsp`, the `sysml-mcp` Model Context Protocol server, the Jupyter
+kernel, the WebAssembly builds — and every
 client library (Go, Python, Node/TypeScript, Java, Rust, Julia, MATLAB/Octave).
 
 Each skill is a directory under `skills/` with a `SKILL.md` in the
@@ -25,7 +26,7 @@ into the location your tool reads (for example `.claude/skills/`, `.agents/skill
 
 | Skill | Use when |
 |---|---|
-| [opensysml-install](skills/opensysml-install/SKILL.md) | Installing `sysml`, `sysml-lsp`, `sysml-grpc`; release verification; solver setup; how clients provision binaries |
+| [opensysml-install](skills/opensysml-install/SKILL.md) | Installing `sysml`, `sysml-lsp`, `sysml-grpc`, `sysml-jupyter-kernel`, `sysml-mcp`; `--tools all`; release verification; solver setup; how clients provision binaries |
 | [opensysml-cli](skills/opensysml-cli/SKILL.md) | Non-interactive `sysml`: validate, evaluate, instantiate, run behaviors, `-json`, exit statuses, CI gates |
 | [opensysml-repl](skills/opensysml-repl/SKILL.md) | Interactive `sysml` session and `%` commands; stepping actions and state machines |
 | [opensysml-sysml-authoring](skills/opensysml-sysml-authoring/SKILL.md) | Writing `.sysml`/`.kerml` the tool accepts; imports, defaults vs fixed values, requirement usages, common diagnostics |
@@ -33,6 +34,7 @@ into the location your tool reads (for example `.claude/skills/`, `.agents/skill
 | [opensysml-analysis-engines](skills/opensysml-analysis-engines/SKILL.md) | `-engines`, `-engine auto\|name\|all`, standings, `-check-*` bounds, external engine manifests |
 | [opensysml-service](skills/opensysml-service/SKILL.md) | Running `sysml-grpc`: ports, health, Connect JSON/protobuf, capabilities, the RPC surface |
 | [opensysml-lsp](skills/opensysml-lsp/SKILL.md) | `sysml-lsp` and editor wiring (VS Code extension, OpenCode, generic LSP clients) |
+| [opensysml-mcp](skills/opensysml-mcp/SKILL.md) | `sysml-mcp`, OpenSysML as MCP tools for coding agents: host configuration (`-print-config`), the `lsp`/`runtime`/`session` tool groups, which tool to call for a job |
 | [opensysml-jupyter](skills/opensysml-jupyter/SKILL.md) | The Jupyter kernel: install, cells, rich output, notebook reuse |
 | [opensysml-wasm](skills/opensysml-wasm/SKILL.md) | WASI and js/wasm builds, what runs in-process and what needs a native service |
 | [opensysml-documents](skills/opensysml-documents/SKILL.md) | Rendering views and diagrams, generating Markdown/HTML/PDF documents |
