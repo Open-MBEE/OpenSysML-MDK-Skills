@@ -1,6 +1,6 @@
 ---
 name: opensysml-node
-description: Use the `@openmbee/opensysml` TypeScript/JavaScript client in Node and browsers — load and validate SysML v2 models, read discriminated-union values, evaluate, instantiate, verify, execute, render, convert, migrate and edit, choose between a private `sysml-grpc` child, a shared service (OPENSYSML_SERVICE / address), or the in-process WASM module, negotiate capabilities and handle typed errors. Use when writing Node scripts, tests, web apps or VS Code/Electron tooling against OpenSysML.
+description: Use the `@openmbee/opensysml` TypeScript/JavaScript client in Node and browsers — load and validate SysML v2 models, read discriminated-union values, evaluate, instantiate, verify, execute, model-check, run Monte Carlo samples, self-check, record runs, import data, compare tool results, render, convert, migrate and edit, choose between a private `sysml-grpc` child, a shared service (OPENSYSML_SERVICE / address), or the in-process WASM module, negotiate capabilities and handle typed errors. Use when writing Node scripts, tests, web apps or VS Code/Electron tooling against OpenSysML.
 license: Apache-2.0
 metadata:
   project: OpenSysML
@@ -29,7 +29,18 @@ try {
 ```
 
 `loads(source, options)` parses text; `connect(options)` returns a `Connection` whose
-`load`/`loads`/`parseSources` share one service and one parse cache.
+`load`/`loads`/`parseSources` share one service and one parse cache. Parse options:
+`{ strictConformance: true }` (its alias `strict` is deprecated; passing both with different
+values is refused) and `language: "kerml"`.
+
+Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client at
+`client/node` of the same checkout (`@openmbee/opensysml@0.10.1`; `npm run build && npm test`
+green). Anything marked *nightly* is a method of the client as well as an RPC of the service:
+`@openmbee/opensysml@0.10.1` has no `checkAction`. Install `npm install @openmbee/opensysml@nightly`
+(the `nightly` dist-tag, `<next>-nightly.<yyyymmdd>.g<commit>`; `latest` stays the release) — its
+platform packages carry the same night's `sysml-grpc` — or depend on `client/node` of a `develop`
+checkout after `npm run build`. A nightly client against a v0.10.1 service throws
+`MissingCapabilityError`.
 
 ## Three ways to reach a service
 
@@ -41,9 +52,12 @@ try {
 
 The private child's binary is resolved via `OPENSYSML_GRPC_BINARY`, `~/.opensysml/bin/`, a
 SHA-256-verified download of the client's pinned release, then `PATH`
-(`opensysml-install`). `connect({ version: "v0.9.2" })` requires a service
+(`opensysml-install`). `connect({ version: "v0.10.1" })` requires a service
 version; `connect({ requireCapabilities: [CAPABILITY_CONVERT, CAPABILITY_DOCUMENT_QUERY] })`
-refuses at connect time rather than at the first gated call.
+refuses at connect time rather than at the first gated call. Every capability has a
+constant; the nightly ones are `CAPABILITY_CHECK`, `CAPABILITY_RUNS`, `CAPABILITY_SELF_CHECK`,
+`CAPABILITY_RECORD_RUN`, `CAPABILITY_IMPORT_DATA`, `CAPABILITY_COMPARE_RESULTS`,
+`CAPABILITY_RENDER_DOCUMENT_FILE_NAME` (`opensysml-service` lists what each service advertises).
 
 Browsers cannot spawn a child: run `sysml-grpc -cors-allowed-origins <origin>` (and TLS off
 localhost) and `connect({ address })` from `@openmbee/opensysml/browser`, or use WASM. The
@@ -61,19 +75,48 @@ wire encoding is protobuf by default; JSON is for debugging (`opensysml-service`
 
 ## Operations on `Model`
 
-- Validate: `model.hasErrors`, `model.diagnostics` (`severity`, `message`, `span`, `code`).
+- Validate: `model.hasErrors`, `model.diagnostics` (`severity`, `message`, `span`, `code`);
+  `model.refreshDiagnostics({ disableLint: ["rounded-real-literal"], enableLint: [...] })`
+  re-asks the service with lint selection (*nightly*; lint names are `undeclared-signal`,
+  `port-type-mismatch`, `deferred-keeper-unmarked`, `rounded-real-literal`).
 - Elements: `model.get("Pkg::x")`, `model.find("x")`, `model.root`.
 - `instantiate(id)`, `eval(expr, { subject, contextSymbolId })`.
 - Verification: `verifyConstraint(id, opts)`, `verifyRequirement(id, opts)`,
   `verifySatisfaction(id?)`, `validateInstance(id)` → verdicts with `holds`, `kind`,
-  `engine`, `explain`.
-- Execution: `executeAction(id, { inputs, schedule, performer })`,
-  `executeState(id, { events, trace })`, `explore*` variants for many schedules.
-- Analysis: `calc(id, args)`, `runAnalysis(id, opts)`, `runSweep(id, ranges, opts)`,
-  `listEngines()` on the connection.
+  `engine`, `explain`; a case's `VerificationVerdict` carries `instanceId` (`bigint`) and
+  `instanceTypeId` for the object it ran on, `0n` and `""` when none (*nightly*).
+- Execution: `executeAction(id, { inputs, schedule, performer, advance, seed, draws, clockStep })`,
+  `executeState(id, { events, trace, advance, seed, draws, clockStep })`, `explore*` variants
+  for many schedules. *Nightly:* `advance` (seconds), `seed` (`bigint`), `draws`
+  (`"min" | "max" | "average"`), `clockStep` are the CLI's `-advance`, `-seed`, `-draws`,
+  `-clock-step`.
+- Analysis: `calc(id, args)`, `runAnalysis(id, { subject, arguments, namedArguments, schedule, engine, toolDryRun })`,
+  `runSweep(id, ranges, opts)`, `connection.listEngines({ probe })` → `EngineInfo[]`.
+  *Nightly:* `toolDryRun: true` stops at the first external tool call and fills the result's
+  `toolDryRun` (`action`, `tool`, `executable`, `args`, `env`, `cwd`, `stdin`, `inputs`,
+  `outputs`, `lines`); `probe: true` starts each external engine once (`ready`, `unavailable`).
+- Model checking (*nightly*, `check`): `checkAction(id, { inputs, performer, properties, diverge, freeInputs, assume, witness, depth, states, unroll, timeout, engine })`,
+  `checkStateMachine(id, options)` → `CheckResult` (`verdict` `"holds" | "fails" | "undecided"`,
+  `lines`, `search`, `violations`, `divergences`, `finals`, `witness`, `standing`).
+- Repeated runs (*nightly*, `runs`): `runRuns({ action | analysis, runs, seed, draws, clockStep, observe, inputs, performer, subject, arguments, namedArguments, engine })`
+  → `RunsResult` (`rows`, `observables`, `distributions`, `lines`, `outputs`, `verdicts`,
+  `seed`); `runs`/`seed` accept `bigint | number`; unseeded random runs are refused.
+- Self-check (*nightly*, `self_check`): `selfCheck(packages = [])` → `SelfCheckResult`
+  (`status`, `findings`, `elements`, `checks`, `violations`, `unevaluated`, `applications`, `summary`).
+- Record a run (*nightly*, `record_run`): `recordRun(caseId, { subject, arguments, namedArguments, into, ranges, runs, seed, engine })`
+  → `Recording` (`run | sweep | sample`, `package`, `definition`, `records`, `source`, `modelHash`).
+- Data import (*nightly*, `import_data`): `importData([{ name, content, format?, map? }], { importAs, dryRun, acceptDocuments })`
+  → `ImportResult` (`files`, `content`, `documents`, `modelHash`).
+- Compare tool results (*nightly*, `compare_results`): `compareResults(resultsJson, { actions, runs, seed, draws, clockStep, observe, engine })`
+  → `Comparison` (`source`, `configurations`, `standing`).
 - Queries/documents: `query({ where, select, scope })`, `runDocumentQuery(id, bindings)`,
-  `renderDocument(id, { form: "markdown" | "html" })`, `renderView(name, { ports })`,
-  `exportGraphs(subject)`.
+  `renderDocument(id, { form: "markdown" | "html" })` → `string` (the file name of
+  `RenderDocumentResponse` is not surfaced by this client),
+  `renderView(name, { ports, show, depth })` → `RenderedView` (`nodes`, `edges`, `rows`,
+  `notices`, `shown`), `exportGraphs(subject)`. *Nightly:* `show` adds optional notation
+  elements (`"parameter-symbols"`, `"port-symbols"`, `"compartments"`, `"edge-labels"`,
+  `"keywords"`, `"multiplicities"`, `"typings"`, `"qualifiers"`, `"all"`), `shown` lists what
+  was drawn, `depth` bounds nesting and `notices` says why a rendering is empty.
 - Conversion/migration: `convert("ttl" | "api-json" | "sysml")`, `save(path)`,
   `connection.migrate("sysml", { path | content, report: true })`.
 - Authoring: `model.edit()` collects `setValue`, `rename`, `move`, `delete`, `add*`

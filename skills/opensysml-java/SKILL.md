@@ -1,6 +1,6 @@
 ---
 name: opensysml-java
-description: Use the Java client `org.openmbee:opensysml` (JDK 17+) to drive OpenSysML from Java, Kotlin or Scala — build it from the OpenSysML checkout, open a private `sysml-grpc` or connect to a shared one, load models, read diagnostics, evaluate typed values, verify, execute, convert and edit, with unchecked exceptions and capability negotiation. Use when integrating OpenSysML into JVM tooling (Maven/Gradle builds, Cameo/Papyrus plugins, servers).
+description: Use the Java client `org.openmbee:opensysml` (JDK 17+) to drive OpenSysML from Java, Kotlin or Scala — build it from the OpenSysML checkout, open a private `sysml-grpc` or connect to a shared one, load models, read diagnostics, evaluate typed values, verify, execute, model-check, run Monte Carlo samples, self-check, record runs, import data, compare tool results, render, convert and edit, with unchecked exceptions and capability negotiation. Use when integrating OpenSysML into JVM tooling (Maven/Gradle builds, Cameo/Papyrus plugins, servers).
 license: Apache-2.0
 metadata:
   project: OpenSysML
@@ -13,7 +13,7 @@ metadata:
 <dependency>
   <groupId>org.openmbee</groupId>
   <artifactId>opensysml</artifactId>
-  <version>0.9.2</version>
+  <version>0.10.1</version>
 </dependency>
 ```
 
@@ -26,7 +26,16 @@ mvn -f client/java/pom.xml install   # installs org.openmbee:opensysml (+ source
 ```
 
 `maven.compiler.release` is 17; the client uses protobuf bodies over Connect by default and
-has a small dependency footprint (no gRPC-java runtime).
+has a small dependency footprint (no gRPC-java runtime). The build needs Maven 3.9.6+
+(`protobuf-maven-plugin` refuses older ones).
+
+Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client at
+`client/java` of the same checkout (`0.10.1`; `mvn -pl opensysml-client -am test` green with
+Maven 3.9.11). Anything marked *nightly* is a method of the client as well as an RPC of the
+service: an artifact built from the `v0.10.1` tag has no `checkAction` (compile error), and Maven
+Central gets no snapshot — build and `mvn install` from a `develop` checkout (the artifact keeps
+the `0.10.1` version string and replaces a release build in `~/.m2`). A nightly client against a
+v0.10.1 service throws `CapabilityException`.
 
 ```java
 import org.openmbee.opensysml.*;
@@ -63,17 +72,37 @@ try (Connection connection = Connection.open()) {          // private sysml-grpc
 
 ## `Model` operations
 
-Same surface as the other clients, in Java naming: `ok`, `errors`, `diagnostics`,
-`requireNoErrors`, `root`/`roots`, `get`, `find`, `lookup`, `symbol`, `contains`,
-`eval`/`evalWithSubject`/`evalInContext`, `evaluateCalc`, `instantiate`, `verifyConstraint`,
-`verifyRequirement`, `verifySatisfaction`, `validateInstance`, `runAnalysis`, `runSweep`,
-`executeAction`, `executeState`, `exploreAction`/`exploreState`/`exploreAnalysis`, `query`,
-`queryOslc`, `runDocumentQuery`, `documents`, `renderDocument`, `renderView`,
-`exportGraphs`, `convert`/`save`, `withEngine(name)` (a model view that routes verification
-to one engine), `edit()` → `Editor` collecting operations for one `applyEdits`, plus
+Same surface as the other clients, in Java naming: `ok`, `errors`, `diagnostics()` /
+`diagnostics(DiagnosticsOptions)`, `requireNoErrors`, `root`/`roots`, `get`, `find`,
+`lookup`, `symbol`, `contains`, `eval`/`evalWithSubject`/`evalInContext`, `evaluateCalc`,
+`instantiate`, `verifyConstraint`, `verifyRequirement`, `verifySatisfaction`,
+`validateInstance`, `runAnalysis(id, AnalysisOptions)`, `runSweep`,
+`executeAction(id, inputs, ExecutionOptions)`, `executeState`,
+`exploreAction`/`exploreState`/`exploreAnalysis`, `query`, `queryOslc`, `runDocumentQuery`,
+`documents`, `renderDocument(id[, DocumentForm])` → `RenderedDocument`,
+`renderView(name[, RenderViewPorts[, show[, depth]]])` → `RenderedView`, `exportGraphs`,
+`convert`/`save`, `withEngine(name)` (a model view that routes verification to one engine),
+`edit()` → `Editor` collecting operations for one `applyEdits`, plus
 `connection.migrate(...)`/`migrateFile(...)`, `connection.convert(...)`/`convertFile(...)`,
-`connection.capabilities()`, `connection.listEngines()`, `connection.address()`,
-`connection.ownsService()`.
+`connection.capabilities()`, `connection.listEngines()` / `listEngines(boolean probe)`,
+`connection.address()`, `connection.ownsService()`.
+
+Options are records with `defaults()` and `with…` copies:
+
+| Need | Call |
+|---|---|
+| Lint selection (*nightly*) | `model.diagnostics(DiagnosticsOptions.defaults().disabling("rounded-real-literal").enabling(...))`; names are `undeclared-signal`, `port-type-mismatch`, `deferred-keeper-unmarked`, `rounded-real-literal` |
+| Run options (*nightly*) | `ExecutionOptions.defaults().withSchedule(s).withPerformer(p).withTrace().withAdvance(seconds).withSeed(n).withDraws("min" / "max" / "average").withClockStep(seconds)` on `executeAction`/`executeState` |
+| Tool dry run (*nightly*) | `AnalysisOptions.defaults().withToolDryRun()` → `Analysis.toolDryRun()` is `Optional<ToolDryRun>` (`action()`, `tool()`, `version()`, `manifest()`, `executable()`, `protocol()`, `args()`, `env()`, `cwd()`, `lines()`) |
+| Engines (*probe nightly*) | `connection.listEngines(true)` starts each external engine once; `EngineInfo` answers `ready()`/`unavailable()` |
+| Model checking (*nightly*, `Capabilities.CHECK`) | `model.checkAction(id, inputs, CheckOptions.defaults().withProperties(...).withDiverge(...).withFreeInputs(...).withAssume(...).withWitness().withBounds(depth, states, unroll, timeout).withEngine(e).withPerformer(p))`, `model.checkStateMachine(id, options)` → `CheckResult` (`verdict()` `holds`/`fails`/`undecided`, `lines()`, `search()`, `violations()`, `divergences()`, `finals()`, `standing()`) |
+| Repeated runs (*nightly*, `Capabilities.RUNS`) | `model.runRuns(RunsOptions.action(id, runs)` or `RunsOptions.analysis(id, runs)` `.withSeed(n).withDraws(d).withClockStep(s).withObserve(...).withInputs(map).withPerformer(p).withSubject(id).withArguments(list).withNamedArguments(map))` → `Runs` (`rows()`, `observables()`, `distributions()`, `outputs()`, `verdicts()`, `unconcluded()`, `seed()`, `standing()`) |
+| Self-check (*nightly*, `Capabilities.SELF_CHECK`) | `model.selfCheck(List.of())` or `selfCheck(List.of("SysMLValidation"))` → `SelfCheck` (`status()`, `findings()`, `elements()`, `checks()`, `violations()`, `unevaluated()`, `applications()`, `summary()`) |
+| Record a run (*nightly*, `Capabilities.RECORD_RUN`) | `model.recordRun(caseId, RecordOptions.defaults().withSubject(id).withArguments(list).withNamedArguments(map).into(pkg).withRanges(list).withRuns(runs, seed))` → `Recording` (`run()`/`sweep()`/`sample()`, `packageName()`, `definition()`, `records()`, `source()`, `documents()`, `modelHash()`) |
+| Data import (*nightly*, `Capabilities.IMPORT_DATA`) | `model.importData(List.of(new DataImport(name, content, Optional.empty(), Optional.empty())), dryRun, acceptDocuments)` → `ImportResult` (`files()`, `content()`, `documents()`, `modelHash()`) |
+| Compare tool results (*nightly*, `Capabilities.COMPARE_RESULTS`) | `model.compareResults(resultsJson, CompareOptions.defaults())` or `new CompareOptions(actions, runs, seed, draws, clockStep, observe, engine)` (`observe` pairs are `CompareOptions.ObservablePair(stored, feature)`) → `Comparison` (`source()`, `configurations()`, `standing()`) |
+| Rendering | `RenderedDocument` is `record (DocumentForm form, String content, String fileName)` — `fileName()` is the file a rendered set writes the document to, populated under `Capabilities.RENDER_DOCUMENT_FILE_NAME` (*nightly*), empty before; `renderView(name, RenderViewPorts.MINIMAL, List.of("edge-labels", "typings"), 2)` → `RenderedView` whose `shown()` lists what was drawn and `notices()` says why a rendering is empty (`show`/`depth`/`shown` *nightly*; `show` names are `parameter-symbols`, `port-symbols`, `compartments`, `edge-labels`, `keywords`, `multiplicities`, `typings`, `qualifiers`, `all`) |
+| Verdict subject (*nightly*) | `VerificationVerdict.instanceId()` (`Optional<Long>`) and `instanceTypeId()` name the object a per-object case verdict ran on |
 
 `Value` is a sealed interface of records — `RealValue`, `IntegerValue`, `BigIntegerValue`,
 `RationalValue`, `ComplexValue`, `BooleanValue`, `StringValue`, `EnumerationValue`,
