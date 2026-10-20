@@ -14,7 +14,7 @@ names its clause in SysML v2.0 Beta 4 (OMG `ptc/2025-04-05`; KerML 1.0 Beta 4 is
 `ptc/2025-04-01`; the OMG SysML v1-to-v2 transformation is `ptc/25-04-10`), gives the
 correct shape, the wrong shape and what each tool says about it. Every snippet lives under
 [`references/examples/`](references/examples/) and was run through `sysml -validate`
-(OpenSysML `v0.10.0-48-g6ea8e8658`) and the OMG pilot validator (pilot release `2026-08`,
+(OpenSysML `sysml v0.10.1-1266-gdada45c11`, a `develop` build) and the OMG pilot validator (pilot release `2026-08`,
 `validate-sysml` from OpenSysML's `scripts/download-pilot-validator.sh`); the recorded
 commands and outputs are in [`references/verification.md`](references/verification.md).
 Syntax and diagnostics in general: `opensysml-sysml-authoring`. Checking: `opensysml-checking`.
@@ -78,8 +78,9 @@ use case def 'Run Session' {
 - `connection connect Operator to 'Acquire Image';` with no `actor` in the use case
   ([`01-wrong-no-actor-parameter.sysml`](references/examples/01-wrong-no-actor-parameter.sysml)):
   both validators accept it (exit `0`) — the error is semantic, so no tool will tell you. The
-  use case has no actor: `sysml -render 'Actor-less Diagram' -render-form dot` draws the line
-  into a use case cluster whose only member is `subject`.
+  use case has no actor, and the picture does not show it either: `sysml -render 'Actor-less
+  Diagram' -render-form dot` draws the same `«part»`-to-`«use case»` edge the correct model
+  draws (§2). Only the text tells them apart.
 - `connect Operator to 'Acquire Image'.operator` when the parameter is missing
   ([`01-wrong-missing-parameter.sysml`](references/examples/01-wrong-missing-parameter.sysml)):
   OpenSysML `error: unresolved member: operator` (exit `2`); pilot `Couldn't resolve reference to
@@ -88,18 +89,31 @@ use case def 'Run Session' {
   parameter.`; OpenSysML accepts it. Redefine `subject :>> …` first, as above — the spec's own
   §7.25.3 example omits it, so this is pilot behavior, not a spec rule.
 
-The v1 migrator on this OpenSysML version writes a use-case diagram's actor lines as
-connections to the use case usage and gives the use case no actor member (its report marks
-the actor *approximated*). Repair by adding the `actor … :> Part;` parameters and re-pointing
-the connections at them.
+The v1 migrator on this build (nightly builds and the release after 0.10.1) writes each actor
+association of a use case as an `actor` parameter nested in the use case after its `subject`,
+subsetting the actor's one package-level `part` with the end's multiplicity:
+
+```sysml
+use case 'Park Car' {
+    subject garage : Context::Garage;
+    actor driver :> Context::Driver;
+    actor attendant [0..1] :> Context::Attendant;
+}
+```
+
+(`subject;` is written first when the use case has actors but no subject.) The actor itself is a
+`part` usage the report marks *approximated* (`a UML actor is written as a part usage`). Output
+of 0.10.1 and earlier wrote the actor lines as connections to the use case with no actor member;
+repair that by adding the `actor … :> Part;` parameters and re-pointing the connections at them.
 
 ## 2. Graphical notation is optional
 
 **Spec.** §7.26.5: "Definition and usage nodes can include symbols on the boundary of the node to
 represent ports and parameters." *Can*, not *must*: an actor parameter drawn as a boundary box
 on the use case, listed in a compartment, or shown as a line to the use case node are all
-renderings of the same model. OpenSysML draws actor parameters as `«actor»` nodes nested inside
-the use case and ends the connection there (`sysml -render "'Lab Use Cases'::'Lab Use Cases'"
+renderings of the same model. OpenSysML's interconnection rendering on this build draws each
+use case as one `«use case»` node and runs the connection from the actor's `«part»` node to it;
+the actor parameters are not drawn (`sysml -render "'Lab Use Cases'::'Lab Use Cases'"
 -render-form dot`; the view shares its package's name, so a bare `'Lab Use Cases'` is `not a view`).
 
 **Rule.** Never add, remove or rename a model element to change a picture; change the `view`
@@ -183,9 +197,26 @@ whole directory as an extension library with `validate-sysml-batch --extension-l
 as an option when one file must stand alone, inline the `library package` after the model
 (what `sysml -migrate sysml -portable` does for a migration; `-strict` instead writes no
 extension at all). `-strict -validate` in OpenSysML does **not** report extension-library use
-(exit `0` on that file) — it judges notation; there is no `-standalone` flag. The v1 migrator on
-this version writes «Trace» as a dependency with a `/* «Trace» */` comment; replace the comment
-with metadata as above.
+(exit `0` on that file) — it judges notation; there is no `-standalone` flag.
+
+The v1 migrator on this build writes a stereotype the v2 form does not carry as an
+`@MigrationMetadata::AppliedStereotype { … }` marker in the element's body, and names a kept
+dependency by its kind — no `/* «Trace» */` comments (those are 0.10.1 and earlier output):
+
+```sysml
+dependency 'Speed Requirement traces Engine' from 'Speed Requirement' to 'Vehicle Design'::Engine {
+    @MigrationMetadata::AppliedStereotype { stereotype = "Trace"; }
+}
+part def Vehicle {
+    @MigrationMetadata::AppliedStereotype { stereotype = "Block"; tags = "isEncapsulated = true"; }
+}
+```
+
+`profile = "<namespace>"` names a profile the migration did not write; `tags` keeps the tag
+values no v2 feature holds. Under `-strict` the marker is the line comment `// applied
+stereotype «Block»: isEncapsulated = true`. Keep the markers and hand `MigrationMetadata.sysml`
+to the other tool as above (or `-portable` inlines it); a stereotype that is part of your own
+vocabulary is better re-declared as a `metadata def` of yours, as `#Subsystem` is.
 
 ## 5. Constraints that assert something
 
@@ -249,6 +280,13 @@ part def Controller {
 `sysml -action OperationsAction::Controller::run -trace 06-operations-action.sysml` shows
 `count` go `0 → 2 → 5`: `eval feature count -> 0`, `delta -> 2`, then `count -> 2`, `delta -> 3`.
 
+This is the shape the v1 migrator writes on this build: a block's `Operation` becomes the
+owner's composite usage `action <op> { in … }` carrying the operation's parameters and its
+method behaviour as the body (`action start { in key : ScalarValues::Integer[1]; }` inside
+`part def Vehicle`), not a separate `action def` plus a typed usage. The pilot validator warns
+`Duplicate of inherited member name 'start' from Part` on an operation named like an inherited
+occurrence feature (`start`, `done`); rename such an operation after migrating.
+
 **Measured difference.** The mapping's literal form, `perform action inc { in delta … }` on the
 part def with the same callers
 ([`06-operations-perform.sysml`](references/examples/06-operations-perform.sysml)), is accepted by
@@ -283,6 +321,11 @@ a thing with an identity across time (§7.9.4's `individual part def TestPlane_1
 not a synonym for "instance". **Wrong shape:** `individual part sem1 : SEM`
 ([`07-wrong-individual.sysml`](references/examples/07-wrong-individual.sysml)) — `error: An
 individual must be typed by one individual definition.` in both tools.
+
+The v1 migrator on this build writes an `InstanceSpecification` this way: a `part`,
+`constraint`, `item`, `occurrence`, `port` or `attribute` usage typed by its classifiers, slots
+as nested features; an instance of an actor, use case or requirement subsets the classifier's
+usage (`part alice :> Operator;`). It writes no `individual part def`.
 
 ## 8. Views and layout
 
@@ -349,17 +392,26 @@ OpenSysML's render shows `part def Definitions::Detector`, the first import
 
 ## 10. Migration hygiene
 
-`sysml -migrate sysml -migration-report report.txt model.xmi > model.sysml` writes one line per
-v1 element in four buckets; the summary reads `migrated 93 element(s): 77 mapped, 13
-approximated, 3 unmapped (2 skipped …)`. **mapped**: review names and types. **approximated**:
-read the note — on this version that includes the actor connections (§1) and «Trace» comments
-(§4), both repaired as shown. **unmapped**: the element is a `/* not migrated: «Unit»
-InstanceSpecification 'kilogram' — units and quantity kinds are not migrated; use the SI and ISQ
-libraries … */` comment at the place it would have gone; re-model it by hand. **skipped**:
-profiles, libraries and content nothing refers to; nothing to do. Diagrams become `view`s; their
-geometry comes only from an MTIP export (`-layout`), never from the XMI. Keep repairs general:
-fix the shape for every element of the kind, never one named element. Workflow and flags:
-`opensysml-migrate-v1`.
+`sysml model.xmi -migrate sysml -o model.sysml -migration-report report.txt` writes one row per
+v1 element in four buckets; the summary reads `migrated 95 element(s): 77 mapped, 15
+approximated, 3 unmapped (2 skipped as profile, library or notation-only content, 0 as model
+elements nothing refers to)` for OpenSysML's `vehicle.xmi`. A root `uml:Model` is written as
+`package <ModelName> { … }` (row `Model … (written as package Model)`); associations are
+`connection def`s (§3), use-case actors `actor` parameters (§1), operations composite `action`
+usages (§6), instance specifications typed usages (§7), owned rules a `constraint def` asserted by
+a usage with `in ref :>> context = this;` (§5), stereotypes `AppliedStereotype` markers (§4).
+**mapped**: review names and types. **approximated**: read the note — `a UML actor is written as
+a part usage`, `the anonymous Association is written as connection def EngineToVehicle`, `a trace
+is written as a plain dependency named by its kind`, `the connector carries nothing of its own, so
+it is written as its flow … alone`, `«Block» isEncapsulated = true has no v2 form`. **unmapped**:
+the element is a `/* not migrated: «Unit» InstanceSpecification 'kilogram' — units and quantity
+kinds are not migrated; use the SI and ISQ libraries … */` comment at the place it would have
+gone; re-model it by hand. **skipped**: profiles, libraries and content nothing refers to;
+nothing to do. Diagrams become `view`s; their geometry comes only from an MTIP export
+(`-layout`), never from the XMI. Names the migrator made up are listed in a `metadata
+MigrationMetadata::SynthesizedName about …;` marker — rename, then delete the entry. Keep
+repairs general: fix the shape for every element of the kind, never one named element. Workflow,
+`-strict`, `-portable`, `-migration-results`: `opensysml-migrate-v1`.
 
 ## Re-verifying
 
