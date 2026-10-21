@@ -1,7 +1,7 @@
-# OpenSysML REDK Agent Skills
+# OpenSysML MDK Agent Skills
 
 Skills that teach coding agents to use the
-[OpenSysML](https://github.com/Open-MBEE/OpenSysML) Runtime Environment and Development Kit (REDK)
+[OpenSysML](https://github.com/Open-MBEE/OpenSysML) Runtime Environment and Development Kit (MDK)
 — the `sysml` binary (CLI, REPL, checking, documents, conversion, migration), the
 `sysml-grpc` service, `sysml-lsp`, the `sysml-mcp` Model Context Protocol server, the Jupyter
 kernel, the WebAssembly builds — and every
