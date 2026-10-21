@@ -1,6 +1,6 @@
 ---
 name: opensysml-install
-description: Install the OpenSysML REDK binaries (sysml, sysml-lsp, sysml-grpc, sysml-jupyter-kernel, sysml-mcp) with the release install script, Homebrew, Scoop, the Windows MSI, go install, or a source build, pin a release or the nightly, verify checksums, and locate the binaries the language clients auto-download. Use when a task needs the `sysml` command, a `sysml-grpc` service or the `sysml-mcp` server and it is not yet on PATH, when choosing a release version or `--tools`, or when a client reports it cannot find or verify a binary.
+description: Install the OpenSysML MDK binaries (sysml, sysml-lsp, sysml-grpc, sysml-jupyter-kernel, sysml-mcp) with the release install script, Homebrew, Scoop, the Windows MSI, go install, or a source build, pin a release or the nightly, verify checksums, and locate the binaries the language clients auto-download. Use when a task needs the `sysml` command, a `sysml-grpc` service or the `sysml-mcp` server and it is not yet on PATH, when choosing a release version or `--tools`, or when a client reports it cannot find or verify a binary.
 license: Apache-2.0
 metadata:
   project: OpenSysML
