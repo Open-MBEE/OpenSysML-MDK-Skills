@@ -83,6 +83,15 @@ The `standing:` line says why:
   the router found no path for (seen when both ports sit on the top border with no room above
   them, under `sysml v0.11.0-1195-g14e53c052`); draw.io routes it on open, or give the layout
   room. `-o view.drawio` without `-render-form drawio` writes Mermaid into the file.
+- `-import-diagram` answers `nothing differs from the rendering of …; nothing to import`: the
+  file is the export, or the edit is one no annotation carries (a moved label, a recoloured
+  port, a re-anchored note) — those come back as reports, as do `cell free1 names no element;
+  it is not imported` (a shape drawn in draw.io: nothing is created), `… is not in the
+  rendering; its cell is not imported` (an `fqn` the view no longer has — renamed, filtered,
+  gone) and `… was deleted from the file; the element stays in the model` (nothing is deleted).
+  `no page of the file was rendered from X; the pages were rendered from Y` means `-view` named
+  the wrong view. A view the model does not place imports with absolute coordinates: the
+  container is pinned with its children so a moved child lands where the file has it.
 - Stdlib behaving unexpectedly: `OPENSYSML_LIBRARY_PATH` overrides the bundled library — unset
   it unless you mean to.
 

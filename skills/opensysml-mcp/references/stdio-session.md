@@ -185,7 +185,7 @@ The migrated notation is `structuredContent.content`; nothing is written to disk
 ## Serving fewer groups
 
 `tools/list` answered 22 tools with `-tools lsp`, 32 with `-tools runtime`, 30 with
-`-tools session`, 53 with `-tools lsp,runtime` and 82 with the default `all`
+`-tools session`, 53 with `-tools lsp,runtime` and 82 with the default `all` (83 once `import_diagram` is in)
 (`tool_catalog` is always one of them). `-tools bogus` exits 2 with
 `sysml-mcp: -tools: unknown tool group "bogus"; the groups are lsp, runtime and session`.
 
@@ -238,3 +238,30 @@ everything under PumpStation::station, and there is nothing there`) whatever the
 `views` call on the same `path` first, as above, made it render correctly. On a `js`/`wasip1`
 server the edge carries no anchors or points and the file opens with
 `<!-- notice: edges not routed: this build runs no router; draw.io routes them when the file opens -->`.
+
+## draw.io import (`sysml-mcp v0.11.0-1237-gffb158663`, develop plus the import branch)
+
+The file the export above answered, saved with `tank` dragged 20 px right and 30 px down
+(`<mxGeometry x="60" y="150" …>` on the `n1` cell), imported first as a dry run and then
+applied. The server renders the view again, diffs the file against that export, and answers the
+edits; only `apply` differs between the two calls.
+
+```json
+→ {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"import_diagram","arguments":{"path":"pump-station.sysml","file":"stationView.drawio"}}}
+← {"jsonrpc":"2.0","id":4,"result":{"content":[{"type":"text","text":"PumpStation::stationView: 1 edits planned, 0 refused, edits to 1 documents\nLayout about PumpStation::station::tank"}],
+   "structuredContent":{"view":"PumpStation::stationView","applied":false,
+     "edits":[{"cell":"n1","kind":"Layout","label":"«part»\ntank","target":"PumpStation::station::tank"}],
+     "changes":[{"path":"pump-station.sysml","edits":[{"range":{"start":{"line":27,"column":51},"end":{"line":27,"column":61}},"newText":"100; y = 19"}]}],
+     "unmatched":["PumpStation::station::tank::outlet", …],"deleted":["PumpStation::Tank::outlet", …]}}}
+→ {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"import_diagram","arguments":{"path":"pump-station.sysml","file":"stationView.drawio","apply":true}}}
+← {"jsonrpc":"2.0","id":5,"result":{"content":[{"type":"text","text":"PumpStation::stationView: 1 edits planned, 0 refused, edits to 1 documents, written\nLayout about PumpStation::station::tank"}],
+   "structuredContent":{"view":"PumpStation::stationView","applied":true,"edits":[ … the same … ],"changes":[ … the same … ]}}}
+```
+
+The `changes` are text edits in 1-based lines and columns over the file as it is: here
+`metadata Layout about station::tank { x = 80; y = 160; … }` became `x = 100; y = 190`,
+the cell's new position plus its parent's 40, 40. A third call with the applied file (as
+`content`, the file's text) answered `"edits": []`. The `unmatched`/`deleted` lists are what
+the import reports rather than writes; in this build they also name every port and connection
+of an untouched export (the port cells' `fqn` is the usage path, the importer matched the
+definition's), which the import branch still has to settle — the node edits are unaffected.

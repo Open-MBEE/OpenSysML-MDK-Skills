@@ -62,8 +62,8 @@ sysml -graphs Pkg::Rover::Drive -o drive.json model.sysml    # lowered action/st
   "drawio"; -diagram-form takes mermaid, dot, plantuml, d2`) because the HTML and PDF backends
   turn diagram source into images and nothing rasterizes a draw.io file. Every graph kind has it
   but `sequence` (`-render '#sequence' -render-form drawio` answers `a sequence rendering is
-  not written as drawio; ask for text, mermaid, plantuml or d2`). Nothing reads an edited `.drawio` back into
-  `Layout`/`Route` metadata yet; the LSP's `setLayout`/`setRoute` do (`opensysml-lsp`).
+  not written as drawio; ask for text, mermaid, plantuml or d2`). An edit made in draw.io comes back as `Layout`/`Route`/`Style`/`Canvas`
+  metadata with `sysml model.sysml -import-diagram view.drawio [-dry-run]` (`opensysml-drawio`).
   Graph forms are source for Mermaid/Graphviz/PlantUML/D2, which
   `-doc-form html|pdf` turns into images when the tool is installed; a tree asked for as
   `svg` is refused (`a tree rendering is not written as svg; ask for text, mermaid, dot,

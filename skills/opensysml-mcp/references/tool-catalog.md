@@ -9,11 +9,11 @@ Generated from the server's own `tool_catalog` and `tools/list` answers (`sysml-
 |---|---|---|---|
 | `tool_catalog` | List the tools this server serves: each tool's name, group, the sysml-grpc RPC or `sysml` CLI flag it stands for, and a one-line summary. | none | no |
 
-## `lsp` — the workspace under `-root` (21)
+## `lsp` — the workspace under `-root` (22)
 
 | Tool | Does | Stands for | Writes |
 |---|---|---|---|
-| `apply_model_edit` | Edit a model by operations on its elements rather than by text: setValue, rename, addMember, addConnection, addSequence (action-body items), delete, move, and the diagram-layout annotations setLayout, setRoute, setCanvas, setStyle. | none | yes |
+| `apply_model_edit` | Edit a model by operations on its elements rather than by text: setValue, rename, addMember, addConnection, addSequence (action-body items), delete, move, and the diagram-layout annotations setLayout, setRoute, setCanvas, setStyle, setNote, setPicture. | none | yes |
 | `close_document` | Release a document held open by open_document: the server goes back to the file on disk (or forgets the document when there is no file). | none | yes |
 | `code_actions` | List the quick fixes and refactorings available for a range of a document, each with the edits it would make. | none | no |
 | `completion` | Propose completions at a position: keywords, names in scope and members of the type being accessed. | none | no |
@@ -22,6 +22,7 @@ Generated from the server's own `tool_catalog` and `tools/list` answers (`sysml-
 | `documents` | List the document definitions (doc def) declared across the workspace, which render_document renders to Markdown. | none | no |
 | `format` | Format a SysML v2 / KerML document, or only the lines of a range, in the canonical style. | none | yes |
 | `hover` | Explain the element at a position: its kind, qualified name, type, value and documentation, as Markdown. | none | no |
+| `import_diagram` | Import a draw.io (diagrams.net) file that render_view wrote with form drawio and a user edited in draw.io: what moved, resized, folded, re-routed or recoloured, and the page size, become DiagramLayout annotations (Layout, Route, Style, Canvas, Note, Picture) in the view's body, applied as apply_model_edit applies its operations. | sysml -import-diagram, sysml -view, sysml -dry-run | yes |
 | `inlay_hints` | List the inferred types and values the editor would show inline for the features of a document or range. | none | no |
 | `open_document` | Hold a document open with the given text, as an editor buffer the server analyzes instead of the file on disk, so text can be checked (diagnostics, hover, render) before it is written. | none | yes |
 | `references` | Find every place in the workspace that refers to the element at a position. | none | no |

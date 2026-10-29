@@ -107,15 +107,15 @@ validates against the published `https://opencode.ai/config.json` schema).
 
 Three groups, `-tools lsp,runtime,session`, all served by default; `tool_catalog` is served
 always and answers the catalogue narrowed to the groups served (`{"group": "session"}` for one
-group). With everything on, `tools/list` answers 82 tools: `tool_catalog` + 21 `lsp` + 31
+group). With everything on, `tools/list` answers 83 tools: `tool_catalog` + 22 `lsp` + 31
 `runtime` + 29 `session`. Names are unique across groups: the `lsp` group's
 `workspace_diagnostics`, `render_view`, `render_document` work on a document of the workspace;
 the `runtime` group's `diagnostics`, `render_model_view`, `render_model_document` on a model
 given as `paths`, inline `sources` or a `modelHash`. The full list, grouped, with each tool's
 one-line summary, the RPC or `sysml` flag it stands for and whether it writes, is in
 [references/tool-catalog.md](references/tool-catalog.md); it was generated from the server's own
-`tool_catalog` and `tools/list` answers (regenerated from `sysml-mcp v0.11.0-1195-g14e53c052`: the same 82
-tools; `render_view` now names draw.io among its forms).
+`tool_catalog` and `tools/list` answers (regenerated from `sysml-mcp v0.11.0-1237-gffb158663`, develop plus the draw.io import
+branch: 83 tools, `import_diagram` new in the `lsp` group).
 
 **`lsp` — the workspace under `-root`** (21): `workspace_info`, `workspace_diagnostics`,
 `workspace_symbols`, `document_symbols`, `hover`, `definition`, `references`, `completion`,
@@ -231,7 +231,8 @@ its diagnostics. Values are protojson `Value` arms: `{"realValue": 50.0}`, `{"in
 | Run a state machine | `execute_state` with its events; interactively `debug_start {"kind": "state"}`, `send`, `advance` |
 | Does a requirement hold | `verify_requirement {"paths": [...], "symbolId": "P::Req", "subjectSymbolId": "P::part1"}` → `requirement P::Req: holds [run, observed]`; `verify_constraint`, `verify_satisfaction`, `validate_instance` likewise |
 | Render a view | `render_view {"path": "models/x.sysml", "view": "P::v", "form": "mermaid"}` (also `#tree:P::Part`, `dot`, `plantuml`, `d2`, `drawio`, `text`, `csv`); `render_model_view` for the data form; `views` lists what a document can draw |
-| Export an editable diagram | `render_view` with `"form": "drawio"` answers a diagrams.net file as the text and `structuredContent.artifact`, each cell an `<object fqn=…>` naming what `apply_model_edit`'s `setLayout`/`setRoute` target; a native server routes the edges first (`sysml-mcp v0.11.0-1195-g14e53c052`, in nightly builds and the release after v0.11.0; the exchange is in [references/stdio-session.md](references/stdio-session.md)). No tool reads an edited `.drawio` back yet |
+| Export an editable diagram | `render_view` with `"form": "drawio"` answers a diagrams.net file as the text and `structuredContent.artifact`, each cell an `<object fqn=…>` naming what `apply_model_edit`'s `setLayout`/`setRoute` target; a native server routes the edges first (`sysml-mcp v0.11.0-1195-g14e53c052`, in nightly builds and the release after v0.11.0; the exchange is in [references/stdio-session.md](references/stdio-session.md)) |
+| Import an edited diagram | `import_diagram {"path": "pump-station.sysml", "file": "stationView.drawio"}` is a dry run: `edits` (`kind`, `target`, `label`, `cell`), `changes` (the text edits per document), `unmatched`/`unknown`/`deleted` reported rather than imported, `applied: false`; the same call with `"apply": true` writes the files (`…, written`). `content` carries the file's text instead of `file`, compressed or not; `view` names the page of a multi-page file; `inline` annotates beside the elements. A re-import of the applied file answers `edits: []` (`sysml-mcp v0.11.0-1237-gffb158663`, develop plus the import branch, not yet merged; `opensysml-drawio`) |
 | Render a document | `documents`, then `render_document` (Markdown over the workspace) or `render_model_document` (`-render-document`) |
 | Convert | `convert` between notation, Turtle and API JSON (`-convert`) |
 | Migrate a v1 model | `migrate {"filePath": "model.xmi", "toFormat": "sysml", "report": true}` → `content` is the SysML v2 text: write it to a file with your editor (or `session_open` + `session_submit {"text": content}` + `session_save {"path": …, "apply": true}`; `session_save` alone writes the session's model, not `migrate`'s answer); read `report`; `compare_results` for the v1 tool's recorded runs |

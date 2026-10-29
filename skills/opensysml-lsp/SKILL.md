@@ -157,9 +157,23 @@ whose `fqn` is the same qualified name `nodes[].fqn` carries, the target
 operations name elements the same way. A native server routes the edges the view leaves
 unrouted before answering (exact `exitX`/`entryX` anchors and bend waypoints, as the VS
 Code diagram panel draws them); a `js`/`wasip1` server writes them unrouted under a notice
-(`opensysml-wasm`). Nothing reads an edited `.drawio` back yet: positions still return
-through `setLayout`/`setRoute`, or the VS Code panel. The VS Code extension's *SysML: Export
-Diagram* command offers the same form as `.drawio`. The same operations are plain MCP tools (`render_view`, `views`, `documents`,
+(`opensysml-wasm`). `opensysml/importDiagram` reads the file back after an edit in draw.io:
+`{"textDocument": {"uri": …}, "path": "/…/view.drawio", "dryRun": true}` (`content` with the
+file's text instead of `path`, compressed as draw.io desktop saves it or not; `view` when the
+file has several pages; `inline` to annotate beside the elements). The server renders the view,
+exports it again and diffs the file against that export cell by cell; the result lists the
+planned `edits` (`kind`, `target`, `label`, `cell`), what it reports rather than imports
+(`unmatched` elements the rendering lacks, `unknown` cells naming no element, `deleted` cells,
+`notices` for changes no annotation carries), `stale`, the document `version`, and `edit`, a
+`WorkspaceEdit` the client applies as it applies `applyModelEdit`'s — the same `setLayout`
+/`setRoute`/`setStyle`/`setCanvas` edits, derived from the file instead of a drag. `dryRun` is
+echoed; the server never writes files, so a client that applies nothing has done a dry run.
+Verified with `sysml-lsp v0.11.0-1237-gffb158663` (develop plus the import branch, not yet merged):
+one node moved in the file answered one `Layout` edit whose `newText` was `100; y = 19` over
+the old coordinates. The VS Code extension's *SysML: Export Diagram* command offers the same
+form as `.drawio`, and *SysML: Import layout from draw.io…* (`opensysml.importDiagram`) picks
+a `.drawio`/`.xml` file, sends this request and applies the `edit`, saying `… matches the
+rendering of …; nothing to import` when nothing differs (`opensysml-drawio`). The same operations are plain MCP tools (`render_view`, `views`, `documents`,
 `render_document`, `apply_model_edit`, `debug_*`) in `sysml-mcp`.
 
 ## Troubleshooting

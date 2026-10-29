@@ -353,8 +353,10 @@ table renderings `opensysml-documents` lists.
 ([`08-views-layout-placed.sysml`](references/examples/08-views-layout-placed.sysml)). The DOT
 output differs from the unplaced file only by pinned `pos="…!"` coordinates and `layout=neato`;
 the nodes and edges are the same, and a `-render-form drawio` export puts the same geometry in
-each `<object fqn="…">` cell's `mxGeometry` (nightly builds and the release after v0.11.0;
-`opensysml-documents`). Delete the metadata and the model is unchanged and auto-laid
+each `<object fqn="…">` cell's `mxGeometry`; a node dragged in draw.io comes back through
+`-import-diagram` as the same `metadata Layout about …` line, in absolute coordinates, with
+nothing else in the file rewritten (nightly builds and the release after v0.11.0;
+`opensysml-drawio`). Delete the metadata and the model is unchanged and auto-laid
 out. Two traps: `about` takes qualified names, not feature chains (`about microscope.detector`
 is a parse error in both tools); and the named element must be one the rendering draws, else
 OpenSysML warns `Layout positions part …, which the interconnection rendering of view … does not

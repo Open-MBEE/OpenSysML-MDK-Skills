@@ -38,6 +38,7 @@ into the location your tool reads (for example `.claude/skills/`, `.agents/skill
 | [opensysml-jupyter](skills/opensysml-jupyter/SKILL.md) | The Jupyter kernel: install, cells, rich output, notebook reuse |
 | [opensysml-wasm](skills/opensysml-wasm/SKILL.md) | WASI and js/wasm builds, what runs in-process and what needs a native service |
 | [opensysml-documents](skills/opensysml-documents/SKILL.md) | Rendering views and diagrams, generating Markdown/HTML/PDF documents |
+| [opensysml-drawio](skills/opensysml-drawio/SKILL.md) | Round-tripping a view through draw.io: export, edit in diagrams.net, import the layout back as `DiagramLayout` metadata |
 | [opensysml-convert-rdf](skills/opensysml-convert-rdf/SKILL.md) | Turtle and API-JSON conversion and round-tripping |
 | [opensysml-migrate-v1](skills/opensysml-migrate-v1/SKILL.md) | Migrating SysML v1 (XMI/UML/MagicDraw) models and reading the migration report |
 | [opensysml-troubleshooting](skills/opensysml-troubleshooting/SKILL.md) | Environment variables, budgets, stale services, exit statuses, diagnosing failures |
