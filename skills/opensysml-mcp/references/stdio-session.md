@@ -239,7 +239,7 @@ everything under PumpStation::station, and there is nothing there`) whatever the
 server the edge carries no anchors or points and the file opens with
 `<!-- notice: edges not routed: this build runs no router; draw.io routes them when the file opens -->`.
 
-## draw.io import (`sysml-mcp v0.11.0-1237-gffb158663`, develop plus the import branch)
+## draw.io import (`sysml-mcp v0.11.0-1240-gedc2cc4c7`, develop plus the import branch)
 
 The file the export above answered, saved with `tank` dragged 20 px right and 30 px down
 (`<mxGeometry x="60" y="150" …>` on the `n1` cell), imported first as a dry run and then
@@ -262,6 +262,8 @@ The `changes` are text edits in 1-based lines and columns over the file as it is
 `metadata Layout about station::tank { x = 80; y = 160; … }` became `x = 100; y = 190`,
 the cell's new position plus its parent's 40, 40. A third call with the applied file (as
 `content`, the file's text) answered `"edits": []`. The `unmatched`/`deleted` lists are what
-the import reports rather than writes; in this build they also name every port and connection
-of an untouched export (the port cells' `fqn` is the usage path, the importer matched the
-definition's), which the import branch still has to settle — the node edits are unaffected.
+the import reports rather than writes (`notices` carries a port moved along its border or onto
+another cell). In this build they also name every port and connection of the file `render_view`
+wrote, untouched: the server's export names port cells by the usage path while the importer
+and the CLI's export use the definition's (`fqn="PumpStation::Tank::outlet"`); a CLI export
+imports silently, and the import branch has the server's export to settle before it lands.

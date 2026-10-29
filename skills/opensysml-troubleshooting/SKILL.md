@@ -90,7 +90,10 @@ The `standing:` line says why:
   rendering; its cell is not imported` (an `fqn` the view no longer has — renamed, filtered,
   gone) and `… was deleted from the file; the element stays in the model` (nothing is deleted).
   `no page of the file was rendered from X; the pages were rendered from Y` means `-view` named
-  the wrong view. A view the model does not place imports with absolute coordinates: the
+  the wrong view. A port is drawn by its owner, so moving one along the border (`a port is drawn
+  on its owner's border; its position in the file is not imported`) or onto another node (`a port
+  was moved to another cell; it stays on its owner, so the move is not imported`) is a notice,
+  not an edit. A view the model does not place imports with absolute coordinates: the
   container is pinned with its children so a moved child lands where the file has it.
 - Stdlib behaving unexpectedly: `OPENSYSML_LIBRARY_PATH` overrides the bundled library — unset
   it unless you mean to.

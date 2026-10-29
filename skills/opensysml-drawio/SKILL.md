@@ -13,7 +13,7 @@ OpenSysML writes a view as a diagrams.net (draw.io) file and reads the file back
 edited it: the model stays the source of truth, the drawing tool only moves things. Each cell the
 writer emits is an `<object>` carrying the element's qualified name (`fqn`), so an edit is matched
 to the model by name, not by position, and only what differs from a fresh export becomes an edit.
-Verified with `sysml v0.11.0-1237-gffb158663` (develop plus the draw.io import branch); the export and
+Verified with `sysml v0.11.0-1240-gedc2cc4c7` (develop plus the draw.io import branch); the export and
 its edge routing are in nightly builds and the release after v0.11.0, the import follows them.
 Forms and what a draw.io file contains: `opensysml-documents`; the layout metadata itself:
 `opensysml-modeling-best-practices` §8.
@@ -22,7 +22,7 @@ Forms and what a draw.io file contains: `opensysml-documents`; the layout metada
 
 ```bash
 sysml pump-station.sysml -render PumpStation::stationView -render-form drawio -o stationView.drawio
-#   wrote stationView.drawio (drawio, 5514 bytes)
+#   wrote stationView.drawio (drawio, 5765 bytes)
 #   … edit stationView.drawio in draw.io desktop / diagrams.net / the VS Code draw.io extension …
 sysml pump-station.sysml -import-diagram stationView.drawio -dry-run     # plan + unified diff, writes nothing
 #   Layout about PumpStation::station::tank
@@ -71,6 +71,8 @@ entry of the LSP/MCP result, or part of the VS Code message:
 | A shape with no `fqn` (drawn in draw.io) | `cell free1 names no element; it is not imported` | `unknown` |
 | An `fqn` the rendering lacks (renamed, filtered out, gone) | `… is not in the rendering; its cell is not imported` | `unmatched` |
 | A cell the file lost | `… was deleted from the file; the element stays in the model` | `deleted` |
+| A port moved along its owner's border | `PumpStation::Tank::outlet: a port is drawn on its owner's border; its position in the file is not imported` | `notices` |
+| A port dragged onto another node | `PumpStation::Tank::outlet: a port was moved to another cell; it stays on its owner, so the move is not imported` | `notices` |
 | A moved label, a recoloured port, a re-anchored note, a re-routed edge no `Route` steers (a typing edge) | a notice; no edit | `notices` |
 
 ## The same loop from a client
@@ -93,7 +95,10 @@ LSP's `edit` for the move above was one `newText` of `100; y = 19` over the old 
 - Edges unrouted (`<!-- notice: edges not routed … -->`): a WASM build; re-export with a native
   `sysml`. One edge among routed ones with no anchors: the router found no path (ports on top
   borders with no room above); give the layout room or let draw.io route it.
-- Every port and connection reported `unmatched` and `deleted` on an untouched export: seen in
-  the build above (port cells name the usage path, the importer matched the definition's); the
-  node edits still import, and the import branch has this to settle before it lands.
+- Every port and connection reported `unmatched` and `deleted` on an untouched export: in the
+  build above a file `render_view` wrote over the LSP or MCP (so also the VS Code export) still
+  names its port cells by the usage path (`PumpStation::station::tank::outlet`), while the CLI's
+  export and every importer use the definition's (`PumpStation::Tank::outlet`, with a `link`
+  to its declaration); a CLI export imports silently, the node edits import either way. The
+  import branch has this to settle before it lands.
 - `OPENSYSML_LIBAVOID_WASM` swaps the embedded router module (`opensysml-troubleshooting`).
