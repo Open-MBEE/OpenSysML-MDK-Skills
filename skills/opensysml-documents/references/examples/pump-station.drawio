@@ -54,8 +54,8 @@
             </mxGeometry>
           </mxCell>
         </object>
-        <object id="e0" label="" kind="connection" view="PumpStation::stationView" link="pump-station.sysml:16">
-          <mxCell style="edgeStyle=none;exitX=0.5;exitY=0.08333333333333333;exitPerimeter=0;entryX=0.5;entryY=0.08333333333333333;entryPerimeter=0;rounded=0;html=0;endArrow=none;strokeWidth=3;" edge="1" parent="1" source="n1:n1.0" target="n2:n2.0">
+        <object id="e0" label="" fqn="PumpStation::station::fluid" kind="connection" view="PumpStation::stationView" link="pump-station.sysml:16">
+          <mxCell style="edgeStyle=none;exitX=0.5;exitY=0.0833;exitPerimeter=0;entryX=0.5;entryY=0.0833;entryPerimeter=0;rounded=0;html=0;endArrow=none;strokeWidth=3;" edge="1" parent="1" source="n1:n1.0" target="n2:n2.0">
             <mxGeometry relative="1" as="geometry">
               <Array as="points">
                 <mxPoint x="140" y="139"/>
@@ -64,14 +64,14 @@
             </mxGeometry>
           </mxCell>
         </object>
-        <object id="e1" label="" kind="connection" view="PumpStation::stationView" link="pump-station.sysml:17">
-          <mxCell style="edgeStyle=none;exitX=0.5;exitY=0.08333333333333333;exitPerimeter=0;entryX=0.5;entryY=0.08333333333333333;entryPerimeter=0;rounded=0;html=0;endArrow=none;strokeWidth=3;" edge="1" parent="1" source="n3:n3.0" target="n2:n2.1">
+        <object id="e1" label="" fqn="PumpStation::station::mains" kind="connection" view="PumpStation::stationView" link="pump-station.sysml:17">
+          <mxCell style="edgeStyle=none;exitX=0.5;exitY=0.0833;exitPerimeter=0;entryX=0.5;entryY=0.0833;entryPerimeter=0;rounded=0;html=0;endArrow=none;strokeWidth=3;" edge="1" parent="1" source="n3:n3.0" target="n2:n2.1">
             <mxGeometry relative="1" as="geometry">
               <Array as="points">
                 <mxPoint x="140" y="267.5"/>
                 <mxPoint x="260" y="267.5"/>
-                <mxPoint x="260" y="131.00000008000004"/>
-                <mxPoint x="400" y="131.00000008000004"/>
+                <mxPoint x="260" y="131"/>
+                <mxPoint x="400" y="131"/>
               </Array>
             </mxGeometry>
           </mxCell>

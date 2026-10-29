@@ -239,7 +239,7 @@ everything under PumpStation::station, and there is nothing there`) whatever the
 server the edge carries no anchors or points and the file opens with
 `<!-- notice: edges not routed: this build runs no router; draw.io routes them when the file opens -->`.
 
-## draw.io import (`sysml-mcp v0.11.0-1240-gedc2cc4c7`, develop plus the import branch)
+## draw.io import (`sysml-mcp v0.11.0-1279-g1d8066d15`, develop plus the import branch)
 
 The file the export above answered, saved with `tank` dragged 20 px right and 30 px down
 (`<mxGeometry x="60" y="150" …>` on the `n1` cell), imported first as a dry run and then
@@ -251,8 +251,7 @@ edits; only `apply` differs between the two calls.
 ← {"jsonrpc":"2.0","id":4,"result":{"content":[{"type":"text","text":"PumpStation::stationView: 1 edits planned, 0 refused, edits to 1 documents\nLayout about PumpStation::station::tank"}],
    "structuredContent":{"view":"PumpStation::stationView","applied":false,
      "edits":[{"cell":"n1","kind":"Layout","label":"«part»\ntank","target":"PumpStation::station::tank"}],
-     "changes":[{"path":"pump-station.sysml","edits":[{"range":{"start":{"line":27,"column":51},"end":{"line":27,"column":61}},"newText":"100; y = 19"}]}],
-     "unmatched":["PumpStation::station::tank::outlet", …],"deleted":["PumpStation::Tank::outlet", …]}}}
+     "changes":[{"path":"pump-station.sysml","edits":[{"range":{"start":{"line":27,"column":51},"end":{"line":27,"column":61}},"newText":"100; y = 19"}]}]}}}
 → {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"import_diagram","arguments":{"path":"pump-station.sysml","file":"stationView.drawio","apply":true}}}
 ← {"jsonrpc":"2.0","id":5,"result":{"content":[{"type":"text","text":"PumpStation::stationView: 1 edits planned, 0 refused, edits to 1 documents, written\nLayout about PumpStation::station::tank"}],
    "structuredContent":{"view":"PumpStation::stationView","applied":true,"edits":[ … the same … ],"changes":[ … the same … ]}}}
@@ -261,9 +260,7 @@ edits; only `apply` differs between the two calls.
 The `changes` are text edits in 1-based lines and columns over the file as it is: here
 `metadata Layout about station::tank { x = 80; y = 160; … }` became `x = 100; y = 190`,
 the cell's new position plus its parent's 40, 40. A third call with the applied file (as
-`content`, the file's text) answered `"edits": []`. The `unmatched`/`deleted` lists are what
-the import reports rather than writes (`notices` carries a port moved along its border or onto
-another cell). In this build they also name every port and connection of the file `render_view`
-wrote, untouched: the server's export names port cells by the usage path while the importer
-and the CLI's export use the definition's (`fqn="PumpStation::Tank::outlet"`); a CLI export
-imports silently, and the import branch has the server's export to settle before it lands.
+`content`, the file's text) answered `"edits": []`, as did the untouched export: `0 edits
+planned, 0 refused, edits to 0 documents` with no `unmatched`, `unknown`, `deleted` or
+`notices` key. Those keys appear only with something to report: what the import reports rather
+than writes (`notices` carries a port moved along its border or onto another cell).

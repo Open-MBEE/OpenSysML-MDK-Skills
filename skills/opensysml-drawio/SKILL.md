@@ -13,8 +13,11 @@ OpenSysML writes a view as a diagrams.net (draw.io) file and reads the file back
 edited it: the model stays the source of truth, the drawing tool only moves things. Each cell the
 writer emits is an `<object>` carrying the element's qualified name (`fqn`), so an edit is matched
 to the model by name, not by position, and only what differs from a fresh export becomes an edit.
-Verified with `sysml v0.11.0-1240-gedc2cc4c7` (develop plus the draw.io import branch); the export and
-its edge routing are in nightly builds and the release after v0.11.0, the import follows them.
+Verified with `sysml v0.11.0-1279-g1d8066d15` (develop plus the draw.io import branch): the CLI,
+LSP and MCP exports stamp the same `fqn` on every cell (a port by its declaring definition,
+`fqn="PumpStation::Tank::outlet" link="pump-station.sysml:8"`), and an untouched export from
+any of them imports on any of them with no edit and no report. The export and its edge routing
+are in nightly builds and the release after v0.11.0, the import follows them.
 Forms and what a draw.io file contains: `opensysml-documents`; the layout metadata itself:
 `opensysml-modeling-best-practices` §8.
 
@@ -22,7 +25,7 @@ Forms and what a draw.io file contains: `opensysml-documents`; the layout metada
 
 ```bash
 sysml pump-station.sysml -render PumpStation::stationView -render-form drawio -o stationView.drawio
-#   wrote stationView.drawio (drawio, 5765 bytes)
+#   wrote stationView.drawio (drawio, 5751 bytes)
 #   … edit stationView.drawio in draw.io desktop / diagrams.net / the VS Code draw.io extension …
 sysml pump-station.sysml -import-diagram stationView.drawio -dry-run     # plan + unified diff, writes nothing
 #   Layout about PumpStation::station::tank
@@ -95,10 +98,4 @@ LSP's `edit` for the move above was one `newText` of `100; y = 19` over the old 
 - Edges unrouted (`<!-- notice: edges not routed … -->`): a WASM build; re-export with a native
   `sysml`. One edge among routed ones with no anchors: the router found no path (ports on top
   borders with no room above); give the layout room or let draw.io route it.
-- Every port and connection reported `unmatched` and `deleted` on an untouched export: in the
-  build above a file `render_view` wrote over the LSP or MCP (so also the VS Code export) still
-  names its port cells by the usage path (`PumpStation::station::tank::outlet`), while the CLI's
-  export and every importer use the definition's (`PumpStation::Tank::outlet`, with a `link`
-  to its declaration); a CLI export imports silently, the node edits import either way. The
-  import branch has this to settle before it lands.
 - `OPENSYSML_LIBAVOID_WASM` swaps the embedded router module (`opensysml-troubleshooting`).
