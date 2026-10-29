@@ -13,11 +13,10 @@ OpenSysML writes a view as a diagrams.net (draw.io) file and reads the file back
 edited it: the model stays the source of truth, the drawing tool only moves things. Each cell the
 writer emits is an `<object>` carrying the element's qualified name (`fqn`), so an edit is matched
 to the model by name, not by position, and only what differs from a fresh export becomes an edit.
-Verified with `sysml v0.11.0-1279-g1d8066d15` (develop plus the draw.io import branch): the CLI,
+Verified with `sysml v0.11.0-1280-gb835c3c4f`: the CLI,
 LSP and MCP exports stamp the same `fqn` on every cell (a port by its declaring definition,
 `fqn="PumpStation::Tank::outlet" link="pump-station.sysml:8"`), and an untouched export from
-any of them imports on any of them with no edit and no report. The export and its edge routing
-are in nightly builds and the release after v0.11.0, the import follows them.
+any of them imports on any of them with no edit and no report. Export, routing and import are in nightly builds and the release after v0.11.0.
 Forms and what a draw.io file contains: `opensysml-documents`; the layout metadata itself:
 `opensysml-modeling-best-practices` §8.
 

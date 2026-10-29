@@ -232,8 +232,8 @@ external tool. `-runs`, `-observe`, `-clock-step`, `-tool-dry-run`, `-record-int
   `Picture`); `-dry-run` prints the planned edits (`Layout about PumpStation::station::tank`) and a
   unified diff of each file and writes nothing; without it the files are rewritten in place
   (`pump-station.sysml: written`). An untouched export answers `nothing differs from the
-  rendering of …; nothing to import`. Verified with `sysml v0.11.0-1279-g1d8066d15` (develop plus the
-  import branch, not yet merged); the workflow is in `opensysml-drawio`.
+  rendering of …; nothing to import`. Verified with `sysml v0.11.0-1280-gb835c3c4f`, in nightly builds and the release after
+  v0.11.0; the workflow is in `opensysml-drawio`.
 - Imports from tables: `-import data.csv -import-as values` (with `-import-map`,
   `-import-format`), then `-convert sysml -o OUT` writes the result; `-import-dry-run` previews.
 - Code generation: `-compile Pkg::Fib -target c|go -o fib`; `-source` writes the generated

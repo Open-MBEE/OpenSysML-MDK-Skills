@@ -239,7 +239,7 @@ everything under PumpStation::station, and there is nothing there`) whatever the
 server the edge carries no anchors or points and the file opens with
 `<!-- notice: edges not routed: this build runs no router; draw.io routes them when the file opens -->`.
 
-## draw.io import (`sysml-mcp v0.11.0-1279-g1d8066d15`, develop plus the import branch)
+## draw.io import (`sysml-mcp v0.11.0-1280-gb835c3c4f`)
 
 The file the export above answered, saved with `tank` dragged 20 px right and 30 px down
 (`<mxGeometry x="60" y="150" …>` on the `n1` cell), imported first as a dry run and then

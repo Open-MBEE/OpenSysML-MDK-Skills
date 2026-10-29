@@ -168,7 +168,7 @@ planned `edits` (`kind`, `target`, `label`, `cell`), what it reports rather than
 `WorkspaceEdit` the client applies as it applies `applyModelEdit`'s — the same `setLayout`
 /`setRoute`/`setStyle`/`setCanvas` edits, derived from the file instead of a drag. `dryRun` is
 echoed; the server never writes files, so a client that applies nothing has done a dry run.
-Verified with `sysml-lsp v0.11.0-1279-g1d8066d15` (develop plus the import branch, not yet merged):
+Verified with `sysml-lsp v0.11.0-1280-gb835c3c4f`, in nightly builds and the release after v0.11.0:
 one node moved in the file answered one `Layout` edit whose `newText` was `100; y = 19` over
 the old coordinates. The VS Code extension's *SysML: Export Diagram* command offers the same
 form as `.drawio`, and *SysML: Import layout from draw.io…* (`opensysml.importDiagram`) picks
