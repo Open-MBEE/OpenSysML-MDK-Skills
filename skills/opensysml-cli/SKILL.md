@@ -221,7 +221,10 @@ external tool. `-runs`, `-observe`, `-clock-step`, `-tool-dry-run`, `-record-int
 - SysML v1 migration: `-migrate sysml -o OUT model.xmi` (`opensysml-migrate-v1`).
 - Documents and diagrams: `-render-document NAME -doc-form markdown|html|pdf`, `-render VIEW`
   with `-render-form`, `-render-show`, `-render-depth`, `-render-lines`, `-render-run
-  timeline|sequence=PATH`, `-list [-list-kind KIND]` (`opensysml-documents`).
+  timeline|sequence=PATH`, `-list [-list-kind KIND]` (`opensysml-documents`). `-render-form
+  drawio -o view.drawio` writes an editable diagrams.net (draw.io) file — name the form, the
+  `-o` extension does not choose it; a sequence view and `-diagram-form` refuse it; verified
+  with `sysml v0.11.0-1195-g14e53c052`, in nightly builds and the release after v0.11.0. No flag reads an edited `.drawio` back yet.
 - Imports from tables: `-import data.csv -import-as values` (with `-import-map`,
   `-import-format`), then `-convert sysml -o OUT` writes the result; `-import-dry-run` previews.
 - Code generation: `-compile Pkg::Fib -target c|go -o fib`; `-source` writes the generated

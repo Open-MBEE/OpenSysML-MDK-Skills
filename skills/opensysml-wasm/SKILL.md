@@ -52,7 +52,13 @@ the REPL from a file rather than an interactive stream.
 What works: `-validate`, `-e`, `-query`, `-convert`, `-render`, every document form except
 PDF, `-engines`, the REPL reading a line at a time, `sysml-lsp --stdio`, and
 `sysml-grpc -transport stdio` (Connect framing over stdin/stdout). The prompt is always
-written because a WASM host cannot tell whether stdin is a terminal.
+written because a WASM host cannot tell whether stdin is a terminal. `-render-form drawio`
+works, but the `js` and `wasip1` builds carry no edge router (native builds route draw.io
+exports with libavoid under wazero), so the file carries
+`<!-- notice: edges not routed: this build runs no router; draw.io routes them when the file opens -->`
+and its edges have no anchors or waypoints until draw.io lays them out on open
+(`wasip1` build of `sysml v0.11.0-1195-g14e53c052` under Node's `node:wasi`; nightly builds and the release
+after v0.11.0). Re-render with a native `sysml` for a file that opens the same everywhere.
 
 What is refused, with an explicit message: anything that starts a process (SMT solvers,
 external engines, PDF converters, `-compile`), `sysml-grpc -transport grpc|connect`

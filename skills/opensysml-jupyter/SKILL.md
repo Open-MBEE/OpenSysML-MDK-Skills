@@ -85,7 +85,9 @@ it can: `%viz` and Mermaid renders as `text/vnd.mermaid` (plus `text/vnd.graphvi
 `image/svg+xml` when Graphviz `dot` is on the kernel's `PATH`), `%render VIEW dot` as
 `text/vnd.graphviz`, `%render VIEW markdown` and `%render-document` as `text/markdown`,
 `%render-document NAME ... html` as `text/html` (the HTML fragment). Other image forms
-(`plantuml`, `d2`) need the matching tool installed (`opensysml-documents`).
+(`plantuml`, `d2`) need the matching tool installed (`opensysml-documents`); `%render VIEW
+drawio` prints the diagrams.net file as text, the kernel having no MIME type for it, to save
+and open in draw.io (nightly builds and the release after v0.11.0).
 `%explain-code <code>` explains a diagnostic's code in a cell (`opensysml-repl`).
 
 ## Reusing notebooks and files

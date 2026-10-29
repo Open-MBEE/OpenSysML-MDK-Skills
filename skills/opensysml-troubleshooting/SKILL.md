@@ -76,6 +76,13 @@ The `standing:` line says why:
   check the usage (`-instantiate Pkg::car -constraint Pkg::Car::massLimit`).
 - Float surprises: `1500` is an `Integer`; `rounded-real-literal` lint (opt-in) flags
   inexact decimal literals.
+- A `.drawio` export opens with `<!-- notice: edges not routed: this build runs no router;
+  draw.io routes them when the file opens -->`: the `js`/`wasip1` build has no libavoid
+  router; render with a native `sysml` (`opensysml-wasm`). An edge written with
+  `edgeStyle=orthogonalEdgeStyle` and no anchors or waypoints while the others carry them is one
+  the router found no path for (seen when both ports sit on the top border with no room above
+  them, under `sysml v0.11.0-1195-g14e53c052`); draw.io routes it on open, or give the layout
+  room. `-o view.drawio` without `-render-form drawio` writes Mermaid into the file.
 - Stdlib behaving unexpectedly: `OPENSYSML_LIBRARY_PATH` overrides the bundled library — unset
   it unless you mean to.
 
@@ -103,6 +110,7 @@ diagnostic and exit `2`, never a hang.
 | `OPENSYSML_TOOLS`, `OPENSYSML_ENGINES`, `OPENSYSML_TOOL_TIMEOUT`, `OPENSYSML_TOOL_MAX_OUTPUT` | External analysis tools/engines, their timeout and output cap |
 | `OPENSYSML_GRPC_MAX_HELD_OBJECTS`, `OPENSYSML_GRPC_INDEX_POOL` | Service-side instance and parse-cache limits |
 | `OPENSYSML_WEASYPRINT`, `OPENSYSML_PANDOC`, `OPENSYSML_MMDC`, `OPENSYSML_MMDC_PUPPETEER` | PDF/diagram toolchain for `-render-document` |
+| `OPENSYSML_LIBAVOID_WASM` | A libavoid WebAssembly module (built against the libavoid-js 0.4.5 bindings) that routes `-render-form drawio` edges in place of the embedded one; an unreadable path fails the render (`sysml: libavoid: open …: no such file or directory`). Native builds only; nightly builds and the release after v0.11.0 |
 
 Set them where the *process doing the work* runs: for a Python/Node client that spawns a
 private `sysml-grpc`, that is the client's environment; for a shared service, the
