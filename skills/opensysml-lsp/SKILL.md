@@ -142,14 +142,38 @@ LSP): command `sysml-lsp --stdio`, language ids `sysml` and `kerml`.
 ## Experimental methods (`opensysml/...`)
 
 The server exposes extensions for tooling: `opensysml/render` (a view of a document as
-Mermaid, dot, PlantUML, D2, text or a table), `opensysml/views`, `opensysml/documents`,
+Mermaid, dot, PlantUML, D2, draw.io, text or a table), `opensysml/views`, `opensysml/documents`,
 `opensysml/renderDocument`, `opensysml/stdlibContent` (standard-library source for
 navigation), `opensysml/applyModelEdit` (edits by operation on elements), the
 `opensysml/renderChanged` notification and the `opensysml/debug/*` requests (stepping actions
 and state machines, events). They are documented with request/response shapes in
 `docs/reference/lsp.md` of the OpenSysML repository and are used by the VS Code extension;
 treat them as unstable and check the server version (`sysml-lsp -version`) before relying
-on one. The same operations are plain MCP tools (`render_view`, `views`, `documents`,
+on one. `opensysml/render` with `"form": "drawio"` (listed in the `openSysmlRenderForms`
+capability of `sysml-lsp v0.11.0-1195-g14e53c052`; in nightly builds and the release after v0.11.0) answers the diagrams.net file as
+`artifact` beside the usual `nodes`/`edges`: every node, port and edge cell is an `<object>`
+whose `fqn` is the same qualified name `nodes[].fqn` carries, the target
+`opensysml/applyModelEdit`'s `setLayout`/`setRoute` take, so the file and the edit
+operations name elements the same way. A native server routes the edges the view leaves
+unrouted before answering (exact `exitX`/`entryX` anchors and bend waypoints, as the VS
+Code diagram panel draws them); a `js`/`wasip1` server writes them unrouted under a notice
+(`opensysml-wasm`). `opensysml/importDiagram` reads the file back after an edit in draw.io:
+`{"textDocument": {"uri": …}, "path": "/…/view.drawio", "dryRun": true}` (`content` with the
+file's text instead of `path`, compressed as draw.io desktop saves it or not; `view` when the
+file has several pages; `inline` to annotate beside the elements). The server renders the view,
+exports it again and diffs the file against that export cell by cell; the result lists the
+planned `edits` (`kind`, `target`, `label`, `cell`), what it reports rather than imports
+(`unmatched` elements the rendering lacks, `unknown` cells naming no element, `deleted` cells,
+`notices` for changes no annotation carries), `stale`, the document `version`, and `edit`, a
+`WorkspaceEdit` the client applies as it applies `applyModelEdit`'s — the same `setLayout`
+/`setRoute`/`setStyle`/`setCanvas` edits, derived from the file instead of a drag. `dryRun` is
+echoed; the server never writes files, so a client that applies nothing has done a dry run.
+Verified with `sysml-lsp v0.11.0-1280-gb835c3c4f`, in nightly builds and the release after v0.11.0:
+one node moved in the file answered one `Layout` edit whose `newText` was `100; y = 19` over
+the old coordinates. The VS Code extension's *SysML: Export Diagram* command offers the same
+form as `.drawio`, and *SysML: Import layout from draw.io…* (`opensysml.importDiagram`) picks
+a `.drawio`/`.xml` file, sends this request and applies the `edit`, saying `… matches the
+rendering of …; nothing to import` when nothing differs (`opensysml-drawio`). The same operations are plain MCP tools (`render_view`, `views`, `documents`,
 `render_document`, `apply_model_edit`, `debug_*`) in `sysml-mcp`.
 
 ## Troubleshooting

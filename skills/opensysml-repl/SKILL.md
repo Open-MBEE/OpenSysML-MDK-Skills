@@ -119,6 +119,7 @@ the set)`.
 %tool case|action(args) [object]      # run via an external tool (OPENSYSML_TOOLS)
 %import data.csv [map map.json] [format csv|tsv|json|jsonl] [dry-run]   # set feature values from a table
 %view NAME | %graphs NAME | %render NAME [form [palette] [style] [ports] [link=T] [depth=N]]
+%render NAME drawio                   # the diagrams.net (draw.io) file on stdout; `sysml v0.11.0-1195-g14e53c052`, in nightly builds and the release after v0.11.0
 %viz [--view=TREE|STATE|...] [--style=S...] [form] NAME...   # draw elements with no view declared
 %render-document NAME [mermaid|dot|plantuml|d2 [pilot|cameo]]
 %render-run timeline|sequence [form] [link=T]   # diagram of the recorded run (needs %trace on before the run)

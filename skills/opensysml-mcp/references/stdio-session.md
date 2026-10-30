@@ -185,7 +185,7 @@ The migrated notation is `structuredContent.content`; nothing is written to disk
 ## Serving fewer groups
 
 `tools/list` answered 22 tools with `-tools lsp`, 32 with `-tools runtime`, 30 with
-`-tools session`, 53 with `-tools lsp,runtime` and 82 with the default `all`
+`-tools session`, 53 with `-tools lsp,runtime` and 82 with the default `all` (83 once `import_diagram` is in)
 (`tool_catalog` is always one of them). `-tools bogus` exits 2 with
 `sysml-mcp: -tools: unknown tool group "bogus"; the groups are lsp, runtime and session`.
 
@@ -200,3 +200,67 @@ server with exit status 0. Or use the reference inspector:
 npx @modelcontextprotocol/inspector --cli /usr/local/bin/sysml-mcp --method tools/list
 npx @modelcontextprotocol/inspector --cli /usr/local/bin/sysml-mcp --method tools/call --tool-name tool_catalog
 ```
+
+## draw.io export (`sysml-mcp v0.11.0-1195-g14e53c052`)
+
+The same `render_view` with `"form": "drawio"`, on a placed interconnection view
+([pump-station.sysml](../../opensysml-documents/references/examples/pump-station.sysml)); the
+answer's text is the whole diagrams.net file, `structuredContent` repeats it as `artifact`
+beside the `nodes` and `edges` every form answers. Trimmed: one node, one port and the routed
+edge between the ports.
+
+```json
+→ {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"render_view","arguments":{"path":"pump-station.sysml","view":"PumpStation::stationView","form":"drawio"}}}
+← {"jsonrpc":"2.0","id":5,"result":{"content":[{"type":"text","text":"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- PumpStation::stationView — interconnection rendering (render Views::asInterconnectionDiagram) -->\n<mxfile host=\"OpenSysML\" type=\"device\" compressed=\"false\">\n  <diagram id=\"PumpStation-stationView\" name=\"PumpStation::stationView\">\n …
+     <object id=\"n1\" label=\"«part»&#xA;tank\" fqn=\"PumpStation::station::tank\" kind=\"part\" view=\"PumpStation::stationView\">
+       <mxCell style=\"rounded=1;arcSize=10;html=0;whiteSpace=wrap;align=center;verticalAlign=middle;\" vertex=\"1\" parent=\"n0\">
+         <mxGeometry x=\"40\" y=\"120\" width=\"120\" height=\"80\" as=\"geometry\"/>
+       </mxCell>
+     </object>
+     <object id=\"n1:n1.0\" label=\"^outlet\" fqn=\"PumpStation::station::tank::outlet\" kind=\"port\" view=\"PumpStation::stationView\"> …
+     <object id=\"e0\" label=\"\" kind=\"connection\" view=\"PumpStation::stationView\">
+       <mxCell style=\"edgeStyle=none;exitX=0.5;exitY=0.08333333333333333;exitPerimeter=0;entryX=0.5;entryY=0.08333333333333333;entryPerimeter=0;rounded=0;html=0;endArrow=none;strokeWidth=3;\" edge=\"1\" parent=\"1\" source=\"n1:n1.0\" target=\"n2:n2.0\">
+         <mxGeometry relative=\"1\" as=\"geometry\">
+           <Array as=\"points\">
+             <mxPoint x=\"140\" y=\"139\"/>
+             <mxPoint x=\"360\" y=\"139\"/>
+           </Array> …"}],
+   "structuredContent":{"view":"PumpStation::stationView","kind":"interconnection","form":"drawio","stated":"render Views::asInterconnectionDiagram","shown":["port-symbols","compartments","keywords"],"notices":[],"artifact":"<?xml version=…",
+     "nodes":[{"id":"n0","fqn":"PumpStation::station","kind":"part","notation":"part","declaredHere":true,"height":360, …}, …],
+     "edges":[{"fqn":"PumpStation::station::fluid","from":"n1","fromPort":"n1.0","kind":"connection", …}, …]}}}
+```
+
+A node's `mxGeometry` is relative to its parent cell (`tank` is at `x = 80; y = 160` in the
+model, inside `station` at 40, 40). The edge's `fqn` (`PumpStation::station::fluid`) is in
+`edges`, not on the `<object>`. In this build the first `render_view` on a document the
+server had not been asked about yet answered an empty tree rendering (`the view exposes
+everything under PumpStation::station, and there is nothing there`) whatever the form; a
+`views` call on the same `path` first, as above, made it render correctly. On a `js`/`wasip1`
+server the edge carries no anchors or points and the file opens with
+`<!-- notice: edges not routed: this build runs no router; draw.io routes them when the file opens -->`.
+
+## draw.io import (`sysml-mcp v0.11.0-1280-gb835c3c4f`)
+
+The file the export above answered, saved with `tank` dragged 20 px right and 30 px down
+(`<mxGeometry x="60" y="150" …>` on the `n1` cell), imported first as a dry run and then
+applied. The server renders the view again, diffs the file against that export, and answers the
+edits; only `apply` differs between the two calls.
+
+```json
+→ {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"import_diagram","arguments":{"path":"pump-station.sysml","file":"stationView.drawio"}}}
+← {"jsonrpc":"2.0","id":4,"result":{"content":[{"type":"text","text":"PumpStation::stationView: 1 edits planned, 0 refused, edits to 1 documents\nLayout about PumpStation::station::tank"}],
+   "structuredContent":{"view":"PumpStation::stationView","applied":false,
+     "edits":[{"cell":"n1","kind":"Layout","label":"«part»\ntank","target":"PumpStation::station::tank"}],
+     "changes":[{"path":"pump-station.sysml","edits":[{"range":{"start":{"line":27,"column":51},"end":{"line":27,"column":61}},"newText":"100; y = 19"}]}]}}}
+→ {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"import_diagram","arguments":{"path":"pump-station.sysml","file":"stationView.drawio","apply":true}}}
+← {"jsonrpc":"2.0","id":5,"result":{"content":[{"type":"text","text":"PumpStation::stationView: 1 edits planned, 0 refused, edits to 1 documents, written\nLayout about PumpStation::station::tank"}],
+   "structuredContent":{"view":"PumpStation::stationView","applied":true,"edits":[ … the same … ],"changes":[ … the same … ]}}}
+```
+
+The `changes` are text edits in 1-based lines and columns over the file as it is: here
+`metadata Layout about station::tank { x = 80; y = 160; … }` became `x = 100; y = 190`,
+the cell's new position plus its parent's 40, 40. A third call with the applied file (as
+`content`, the file's text) answered `"edits": []`, as did the untouched export: `0 edits
+planned, 0 refused, edits to 0 documents` with no `unmatched`, `unknown`, `deleted` or
+`notices` key. Those keys appear only with something to report: what the import reports rather
+than writes (`notices` carries a port moved along its border or onto another cell).
