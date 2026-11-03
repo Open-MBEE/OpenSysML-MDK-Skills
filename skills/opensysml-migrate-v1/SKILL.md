@@ -11,9 +11,8 @@ metadata:
 
 A v1 model is **migrated, not converted**: there is no lossless mapping, so `sysml -migrate`
 writes the nearest v2 form and a report that classifies every v1 element. Treat the output
-as a draft to review, never as a finished model. Verified with `sysml v0.10.1-1266-gdada45c11`
-(a `develop` build); what is not in `CHANGELOG.md` under a released version is available in
-nightly builds and the release after 0.10.1.
+as a draft to review, never as a finished model. Verified with the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`); everything below is in
+0.12.0.
 
 ```bash
 sysml Vehicle.xmi   -migrate sysml -o Vehicle.sysml           # OMG XMI 2.5.1 + SysML profile

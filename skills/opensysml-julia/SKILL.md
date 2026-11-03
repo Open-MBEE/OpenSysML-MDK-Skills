@@ -34,11 +34,24 @@ end
 `parse_source(conn, text)` parses a string; `parse_sources(conn, Dict(name => text))` parses
 several documents into one model.
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the package at
-`client/julia/OpenSysML` of the same checkout. Anything marked *nightly* is a function of the
-package as well as an RPC of the service: `Pkg.develop` it from a `develop` checkout (a `v0.10.1`
-checkout has no `check_action`) and run a service newer than v0.10.1 (nightly builds and the
-release after 0.10.1); a nightly package against a v0.10.1 service throws `MissingCapabilityError`.
+Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`) with the package at `client/julia/OpenSysML` of the same checkout.
+Anything marked *nightly* arrived after 0.10.1 and is in the 0.12.0 package: `Pkg.develop` it
+from a checkout of the `v0.12.0` tag or newer (a `v0.10.1` checkout has no `check_action`) and
+run a service of the same release; a newer package against an older service throws
+`MissingCapabilityError`.
+
+**0.12.0 in this client.** A service that requires a bearer token takes it as the `token=` keyword of `connect` (a call
+without it fails `unauthenticated`); `convert` takes `compact`, `omit_derived`/`keep_derived`,
+`include_check_diagnostics`, `id_form` and `include_library_stubs` in the client's spelling
+(capabilities `convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`);
+`render_document` takes the `asciidoc` form (`render_document_asciidoc`); an action run carries
+its trace (`action_trace`); a verdict carries its notes (`verdict_notes`). QVTS: the document-query
+call `run_document_query` runs a `calc def … :> DocumentQueries::Query` and answers typed rows, but no 0.12.0
+client decodes the `QueryOutcome` error detail — a query the model cannot answer is the service's
+`failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
+…, which has no such feature`); run `sysml -run-query … -json` for the structured record
+(`opensysml-qvts`).
+
 
 ## Connections
 

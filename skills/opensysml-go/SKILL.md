@@ -54,11 +54,23 @@ func check(ctx context.Context) error {
   (lint selection is nightly), `client.LookupSymbol(ctx, model, "Pkg::x")`.
 - A syntax error is a diagnostic, not an `error`; a missing file is an `error`.
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build; `go test ./client/opensysml/`
-green). Anything marked *nightly* is absent from the module at `v0.10.1` (`@latest`) — the
-methods do not compile there — and from a v0.10.1 `sysml-grpc`; it arrives in nightly builds and the
-release after 0.10.1. Until then `go get github.com/Open-MBEE/OpenSysML@develop` (or a `develop`
-commit): an in-process `New()` client built from that tree always has it, a `Dial`ed one refuses it
+Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`); `go test ./client/opensysml/` green. Anything marked *nightly* arrived
+after 0.10.1 and is in the 0.12.0 module (`go get github.com/Open-MBEE/OpenSysML@v0.12.0`); it is
+absent from the module at `v0.10.1` — the methods do not compile there — and from a v0.10.1
+`sysml-grpc`. From a `develop` commit: an in-process
+
+**0.12.0 in this client.** A service that requires a bearer token takes it as `opensysml.WithToken(token)` on `Dial` (a call
+without it fails `unauthenticated`); `convert` takes `compact`, `omit_derived`/`keep_derived`,
+`include_check_diagnostics`, `id_form` and `include_library_stubs` in the client's spelling
+(capabilities `convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`);
+`render_document` takes the `asciidoc` form (`render_document_asciidoc`); an action run carries
+its trace (`action_trace`); a verdict carries its notes (`verdict_notes`). QVTS: the document-query
+call `RunDocumentQuery(ctx, model, id, Bind(...))` runs a `calc def … :> DocumentQueries::Query` and answers typed rows, but no 0.12.0
+client decodes the `QueryOutcome` error detail — a query the model cannot answer is the service's
+`failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
+…, which has no such feature`); run `sysml -run-query … -json` for the structured record
+(`opensysml-qvts`).
+ `New()` client built from that tree always has it, a `Dial`ed one refuses it
 client-side with a `*StatusError` (`capability "check" is unavailable`) when the service does not
 advertise the capability.
 

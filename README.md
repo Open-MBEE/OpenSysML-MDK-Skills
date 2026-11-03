@@ -37,7 +37,8 @@ into the location your tool reads (for example `.claude/skills/`, `.agents/skill
 | [opensysml-mcp](skills/opensysml-mcp/SKILL.md) | `sysml-mcp`, OpenSysML as MCP tools for coding agents: host configuration (`-print-config`), the `lsp`/`runtime`/`session` tool groups, which tool to call for a job |
 | [opensysml-jupyter](skills/opensysml-jupyter/SKILL.md) | The Jupyter kernel: install, cells, rich output, notebook reuse |
 | [opensysml-wasm](skills/opensysml-wasm/SKILL.md) | WASI and js/wasm builds, what runs in-process and what needs a native service |
-| [opensysml-documents](skills/opensysml-documents/SKILL.md) | Rendering views and diagrams, generating Markdown/HTML/PDF documents |
+| [opensysml-documents](skills/opensysml-documents/SKILL.md) | Rendering views and diagrams, generating Markdown/AsciiDoc/HTML/PDF documents, `rep language` prose bodies |
+| [opensysml-qvts](skills/opensysml-qvts/SKILL.md) | QVTS document queries: writing `calc def … :> DocumentQueries::Query`, `-run-query`/`%run-query`/`RunDocumentQuery`/`run_document_query`, value vs path error vs model error, `tolerate`, `-json` outcome records, query-backed document tables |
 | [opensysml-drawio](skills/opensysml-drawio/SKILL.md) | Round-tripping a view through draw.io: export, edit in diagrams.net, import the layout back as `DiagramLayout` metadata |
 | [opensysml-convert-rdf](skills/opensysml-convert-rdf/SKILL.md) | Turtle and API-JSON conversion and round-tripping |
 | [opensysml-migrate-v1](skills/opensysml-migrate-v1/SKILL.md) | Migrating SysML v1 (XMI/UML/MagicDraw) models and reading the migration report |
@@ -55,7 +56,7 @@ into the location your tool reads (for example `.claude/skills/`, `.agents/skill
 |---|---|
 | [opensysml-go](skills/opensysml-go/SKILL.md) | `github.com/Open-MBEE/OpenSysML/client/opensysml` — in-process `New()` or `Dial()` |
 | [opensysml-python](skills/opensysml-python/SKILL.md) | `opensysml` on PyPI |
-| [opensysml-node](skills/opensysml-node/SKILL.md) | `@openmbee/opensysml` (Node, browser, WASM) |
+| [opensysml-node](skills/opensysml-node/SKILL.md) | `@openmbee/opensysml` (Node 22.22.2+, browser, WASM) |
 | [opensysml-java](skills/opensysml-java/SKILL.md) | `org.openmbee:opensysml` (JDK 17+) |
 | [opensysml-rust](skills/opensysml-rust/SKILL.md) | `opensysml` on crates.io |
 | [opensysml-julia](skills/opensysml-julia/SKILL.md) | `OpenSysML` (client/julia) |
