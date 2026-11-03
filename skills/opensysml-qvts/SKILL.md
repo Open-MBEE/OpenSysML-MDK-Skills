@@ -123,10 +123,12 @@ Limits.) Other surfaces:
 - **MCP**: `run_document_query` (runtime group; the RPC's bindings and rows) and `query`
   (API & Services Query with `orderBy`); `render_document`/`render_model_document` for
   documents (`opensysml-mcp`).
-- **Clients**: `run_document_query`/`runDocumentQuery` exist in the language clients, but in
-  0.12.0 **none decodes the `QueryOutcome` detail** — a failed query surfaces as the
-  service's status error with the outcome lines in its message, not as a typed result.
-  Parse the CLI's `-json` when a pipeline needs the structured record.
+- **Clients**: every language client runs a query (`model.run_document_query(query_id,
+  bindings)` in Python, `runDocumentQuery` in Node/Java, `RunDocumentQuery` in Go,
+  `run_document_query` in Rust/Julia/MATLAB) and answers typed rows, but in 0.12.0 **none
+  decodes the `QueryOutcome` detail** — a failed query surfaces as the service's status error
+  with the outcome lines in its message, not as a typed result. Parse the CLI's `-json` when a
+  pipeline needs the structured record.
 
 ## Reading a failure
 

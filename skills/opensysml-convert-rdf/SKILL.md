@@ -28,8 +28,15 @@ sysml export.dat  -convert sysml -from ttl         # -from names the input forma
 sysml model.sysml -convert kerml -o model.kerml    # KerML notation; -o reports: wrote model.kerml (sysml, 580 bytes)
 ```
 
-Verified with `sysml v0.10.1-1266-gdada45c11`; `-id`, `-bundle`/`-unbundle` and `.kpar`
-input are in nightly builds and the release after 0.10.1.
+Verified with the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`). `-convert sysml|kerml` lays the
+notation out one statement per line (the formatter's layout); `-keep-line-breaks` keeps
+the author's line breaks and fixes indentation and spacing only. `-include-library-stubs`
+restores the pre-0.11.0 ownerless library stubs in `api-json` for legacy readers; by default
+standard-library elements are referenced by name, not re-emitted. Clients add what the CLI
+does not expose: `compact` (the compact api-json form, `docs/reference/api-json-compact.md`),
+`omit_derived`/`keep_derived`, `include_check_diagnostics`, `id_form` and
+`include_library_stubs` on `convert` (`opensysml-python`, `opensysml-go`, …; capabilities
+`convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`).
 
 The REPL does the same with `%save model.ttl` / `%save model.json` / `%save model.sysml`,
 and every client exposes `convert(model, "ttl")` (`to_turtle`, `to_api_json`, `to_sysml` in
@@ -81,8 +88,12 @@ whether rows set `values` or create elements. REPL: `%import FILE [map FILE]`.
 ## Project interchange archives (`.kpar`)
 
 A directory holding a `.project.json` is an OMG project-interchange project; `-bundle`
-zips it as a `.kpar` and `-unbundle` unpacks one. Archives are read wherever a project
-directory is (named beside a model, under `-library-root`, as `OPENSYSML_LIBRARY_PATH`):
+zips the files its `.meta.json` records as a `.kpar` and `-unbundle` unpacks one. Archives
+are read wherever a project directory is (named beside a model, under `-library-root`, as
+`OPENSYSML_LIBRARY_PATH`); a project's dependencies (`usage` entries, which may carry a
+semver range and are refused when the installed version does not satisfy it) are looked for
+under its `lib/` and `.sysand/lib` directories and the `-library-root`s. A `.kpar` whose
+`.meta.json` states checksum `NONE` is accepted unverified:
 
 ```bash
 sysml -bundle proj -o widgets.kpar      # wrote widgets.kpar (Widgets 1.0.0, 4 files); without -o: <name>-<version>.kpar
