@@ -16,10 +16,14 @@ workspace and resolves names across all its files, so cross-file references work
 editor even though the CLI loads only the files named.
 
 Install it with any route in `opensysml-install` (`--tools sysml-lsp`); the Go route is
-`go install github.com/Open-MBEE/OpenSysML/cmd/sysml-lsp@latest`. Verified against
-`sysml-lsp v0.10.1-1266-gdada45c11` (a `develop` build); `-library-root`, the `libraryRoots`
-setting and project-interchange dependency discovery are in nightly builds and the release
-after 0.10.1, not in v0.10.1.
+`go install github.com/Open-MBEE/OpenSysML/cmd/sysml-lsp@latest`. Verified against the 0.12.0
+release build (`sysml-lsp v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`). New in
+0.12.0: formatting lays statements out one per line unless the `keepLineBreaks` setting (CLI
+`-keep-line-breaks`) keeps the author's; notebook cells (`notebookDocument/*`) are served, so
+a `.ipynb` of SysML cells gets diagnostics, completion and hover in VS Code; library documents
+are addressed as `sysml-stdlib:/…` URIs; run/evaluate code lenses appear on `file:` URIs only;
+a `library package` two documents declare is `library-declared-twice`; Helix, Neovim and Zed
+get highlighting from `tree-sitter-sysml` beside the server.
 
 Coding agents: an LSP client gives an agent *diagnostics as it edits*. An agent that should
 *call* OpenSysML — validate, evaluate, run, render, migrate, keep a REPL session — gets the
@@ -31,8 +35,9 @@ same workspace and more as MCP tools from [`sysml-mcp`](../opensysml-mcp/SKILL.m
 sysml-lsp                         # what an editor runs; -stdio names the only transport for clients that insist
 sysml-lsp -strict                 # strict OMG conformance for every document
 sysml-lsp -no-record-cache        # parse everything, read and write no interface record (also OPENSYSML_RECORD_CACHE=0)
-sysml-lsp -library-root /path/to/store   # where installed projects are, besides the project's own .sysand/lib; repeatable or PATH-separated
-sysml-lsp -version                # sysml-lsp v0.10.1-…; -help, -man
+sysml-lsp -library-root /path/to/store   # where installed projects are, besides the project's own lib/ and .sysand/lib; repeatable or PATH-separated
+sysml-lsp -keep-line-breaks       # formatting keeps the author's line breaks (the keepLineBreaks setting)
+sysml-lsp -version                # sysml-lsp v0.12.0…; -help, -man
 ```
 
 `-library-root` adds to `OPENSYSML_LIBRARY_ROOTS`; a client can also send the `libraryRoots`
@@ -150,7 +155,7 @@ and state machines, events). They are documented with request/response shapes in
 `docs/reference/lsp.md` of the OpenSysML repository and are used by the VS Code extension;
 treat them as unstable and check the server version (`sysml-lsp -version`) before relying
 on one. `opensysml/render` with `"form": "drawio"` (listed in the `openSysmlRenderForms`
-capability of `sysml-lsp v0.11.0-1195-g14e53c052`; in nightly builds and the release after v0.11.0) answers the diagrams.net file as
+capability since 0.11.0) answers the diagrams.net file as
 `artifact` beside the usual `nodes`/`edges`: every node, port and edge cell is an `<object>`
 whose `fqn` is the same qualified name `nodes[].fqn` carries, the target
 `opensysml/applyModelEdit`'s `setLayout`/`setRoute` take, so the file and the edit
@@ -168,8 +173,7 @@ planned `edits` (`kind`, `target`, `label`, `cell`), what it reports rather than
 `WorkspaceEdit` the client applies as it applies `applyModelEdit`'s — the same `setLayout`
 /`setRoute`/`setStyle`/`setCanvas` edits, derived from the file instead of a drag. `dryRun` is
 echoed; the server never writes files, so a client that applies nothing has done a dry run.
-Verified with `sysml-lsp v0.11.0-1280-gb835c3c4f`, in nightly builds and the release after v0.11.0:
-one node moved in the file answered one `Layout` edit whose `newText` was `100; y = 19` over
+Checked on the 0.12.0 build: one node moved in the file answered one `Layout` edit whose `newText` was `100; y = 19` over
 the old coordinates. The VS Code extension's *SysML: Export Diagram* command offers the same
 form as `.drawio`, and *SysML: Import layout from draw.io…* (`opensysml.importDiagram`) picks
 a `.drawio`/`.xml` file, sends this request and applies the `edit`, saying `… matches the

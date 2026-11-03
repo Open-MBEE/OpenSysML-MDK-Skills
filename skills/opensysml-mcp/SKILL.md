@@ -16,13 +16,18 @@ under the root, the runtime's one-shot service (the same operations `sysml-grpc`
 tool per RPC) and named REPL sessions whose declarations, objects and runs persist across
 calls. It has no port and nothing is typed at it; the host owns the process.
 
-Verified against `sysml-mcp v0.10.1-1266-gdada45c11` (a `develop` build). `sysml-mcp` is not
-in the v0.10.1 release: it comes with the release after 0.10.1, and with the nightly snapshots
-once they build a `develop` commit that carries it (the 2026-10-18 nightly, built from an
-earlier commit, did not list a `sysml-mcp-*` asset in its `SHA256SUMS.txt`; check the nightly's
-manifest before pinning `--version nightly`). Until then, build it from `develop`:
-`go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@develop` or `make build-mcp` in a
-checkout — `@latest` resolves to the v0.10.1 module, which has no `cmd/sysml-mcp`.
+Verified against the 0.12.0 release build (`sysml-mcp v0.11.0-1980-g72c5b132f`, built from
+`release/0.12.0`). 0.12.0 is the first tagged release that publishes `sysml-mcp` (its own
+`sysml-mcp-<os>-<arch>` archive, in `SHA256SUMS.txt`, so `--tools all` installs it) and the
+first whose Go module carries `cmd/sysml-mcp`, so `go install …/cmd/sysml-mcp@latest` works
+from that tag on; an npm host can start it without installing anything as
+`npx -y @openmbee/sysml-mcp` (`-print-config-npx` writes that block; `@openmbee/opensysml-mcp`
+is the same package under the client packages' name; Node 22.22.2 or newer).
+
+Besides stdio, `sysml-mcp -http ADDR` serves Streamable HTTP at `/mcp` for hosts that connect
+over the network; loopback is open, any other address needs a bearer token (`-token-file`,
+`-token` or `OPENSYSML_MCP_TOKEN`), `-allow-origin` grants browsers cross-origin access and
+`-public-url` names the address a TLS-terminating proxy exposes.
 
 ## Install
 
@@ -35,17 +40,18 @@ does not include it:
 ```bash
 curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools sysml,sysml-lsp,sysml-mcp
 curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools all                     # everything the release published
-go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@develop                       # from source: the develop head (a v0.10.2-0.<date>-<commit> pseudo-version)
+go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@latest                        # from source: the newest tagged module (0.12.0 or later carries cmd/sysml-mcp)
+npx -y @openmbee/sysml-mcp -version                                                   # no install: npm fetches the package on first use
 ```
 
 A `go install` binary prints `sysml-mcp dev` / `Commit: unknown` for `-version` (no version
-ldflags); `make build-mcp` stamps the version. `go install …@latest` works once a tagged
-release contains `cmd/sysml-mcp`; today it picks v0.10.1 and fails with `module github.com/Open-MBEE/OpenSysML@latest found (v0.10.1), but does
-not contain package github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp`.
+ldflags); `make build-mcp` stamps the version. `go install …@latest` against a module older
+than 0.12.0 fails with `module github.com/Open-MBEE/OpenSysML@latest found (v0.11.0), but does
+not contain package github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp`; pin `@v0.12.0` or newer.
 
-`--tools all` resolves against the release's `SHA256SUMS.txt`, so on v0.10.1 it installs the
-four tools that release published and says it lacks `sysml-mcp`; naming `sysml-mcp` explicitly
-on a release without it fails. Windows: `install.ps1 -Tools sysml,sysml-lsp,sysml-mcp`. The
+`--tools all` resolves against the release's `SHA256SUMS.txt`, so on a release before 0.12.0 it
+installs the four tools that release published and says it lacks `sysml-mcp`; naming `sysml-mcp`
+explicitly on such a release fails. Windows: `install.ps1 -Tools sysml,sysml-lsp,sysml-mcp`. The
 Homebrew formula (`brew install Open-MBEE/tap/opensysml`) and the Scoop manifest install it
 beside `sysml` and `sysml-lsp`; the MSI has it as the *MCP server (sysml-mcp)* feature; the
 winget manifest does not carry it (one archive per architecture). A checkout builds it with
@@ -114,8 +120,14 @@ the `runtime` group's `diagnostics`, `render_model_view`, `render_model_document
 given as `paths`, inline `sources` or a `modelHash`. The full list, grouped, with each tool's
 one-line summary, the RPC or `sysml` flag it stands for and whether it writes, is in
 [references/tool-catalog.md](references/tool-catalog.md); it was generated from the server's own
-`tool_catalog` and `tools/list` answers (regenerated from `sysml-mcp v0.11.0-1280-gb835c3c4f`: 83 tools, `import_diagram` new in the
-`lsp` group).
+`tool_catalog` and `tools/list` answers (checked against the 0.12.0 build: the same 83 tools;
+`import_diagram` arrived in 0.11.0). QVTS: `run_document_query {modelHash | paths | sources,
+queryId, bindings}` answers a query's rows (`structuredContent.columns[].name`, `rows[].cells[]
+.values[]`, `modelHash`) and, when the model cannot answer it, `isError: true` with
+`FAILED_PRECONDITION: query X reads feature mass of …, which has no such feature` — the outcome
+lines, not the structured `QueryOutcome`; `query` runs an API & Services Query (`orderBy`
+supported); `render_document`/`render_model_document` render query-backed documents
+(`opensysml-qvts`). `session_open` takes a `root` for the workspace a session resolves against.
 
 **`lsp` — the workspace under `-root`** (21): `workspace_info`, `workspace_diagnostics`,
 `workspace_symbols`, `document_symbols`, `hover`, `definition`, `references`, `completion`,
@@ -247,7 +259,8 @@ Reading before writing: every tool that writes (`format`, `rename`, `apply_model
 
 Newline-delimited JSON-RPC 2.0 on stdio. `initialize` answers
 `protocolVersion: "2025-06-18"`, `serverInfo {"name": "sysml-mcp", "title": "OpenSysML",
-"version": "v0.10.1-…"}`, capabilities `tools` and `resources` with `listChanged`, and an
+"version": "v0.12.0…", "websiteUrl": "https://github.com/Open-MBEE/OpenSysML"}`, capabilities
+`tools` and `resources` with `listChanged`, and an
 `instructions` text. A tool answer is `result.content[0].text` (readable) beside
 `result.structuredContent` (the same data as JSON); a refused call is `result.isError: true`
 with the message as text, not a protocol error. Schemas are strict: an unknown argument fails
