@@ -14,7 +14,7 @@ names its clause in SysML v2.0 Beta 4 (OMG `ptc/2025-04-05`; KerML 1.0 Beta 4 is
 `ptc/2025-04-01`; the OMG SysML v1-to-v2 transformation is `ptc/25-04-10`), gives the
 correct shape, the wrong shape and what each tool says about it. Every snippet lives under
 [`references/examples/`](references/examples/) and was run through `sysml -validate`
-(OpenSysML `sysml v0.10.1-1266-gdada45c11`, a `develop` build) and the OMG pilot validator (pilot release `2026-08`,
+(OpenSysML's 0.12.0 release build, `sysml v0.11.0-1980-g72c5b132f` from `release/0.12.0`) and the OMG pilot validator (pilot release `2026-08`,
 `validate-sysml` from OpenSysML's `scripts/download-pilot-validator.sh`); the recorded
 commands and outputs are in [`references/verification.md`](references/verification.md).
 Syntax and diagnostics in general: `opensysml-sysml-authoring`. Checking: `opensysml-checking`.
@@ -89,7 +89,7 @@ use case def 'Run Session' {
   parameter.`; OpenSysML accepts it. Redefine `subject :>> …` first, as above — the spec's own
   §7.25.3 example omits it, so this is pilot behavior, not a spec rule.
 
-The v1 migrator on this build (nightly builds and the release after 0.10.1) writes each actor
+The v1 migrator writes each actor
 association of a use case as an `actor` parameter nested in the use case after its `subject`,
 subsetting the actor's one package-level `part` with the end's multiplicity:
 
@@ -355,8 +355,7 @@ output differs from the unplaced file only by pinned `pos="…!"` coordinates an
 the nodes and edges are the same, and a `-render-form drawio` export puts the same geometry in
 each `<object fqn="…">` cell's `mxGeometry`; a node dragged in draw.io comes back through
 `-import-diagram` as the same `metadata Layout about …` line, in absolute coordinates, with
-nothing else in the file rewritten (nightly builds and the release after v0.11.0;
-`opensysml-drawio`). Delete the metadata and the model is unchanged and auto-laid
+nothing else in the file rewritten (`opensysml-drawio`). Delete the metadata and the model is unchanged and auto-laid
 out. Two traps: `about` takes qualified names, not feature chains (`about microscope.detector`
 is a parse error in both tools); and the named element must be one the rendering draws, else
 OpenSysML warns `Layout positions part …, which the interconnection rendering of view … does not

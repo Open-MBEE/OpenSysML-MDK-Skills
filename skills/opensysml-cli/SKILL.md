@@ -18,9 +18,9 @@ together, so one file's reference to a package another declares resolves; a root
 `SI`, ...) is bundled and always available to `import`.
 
 Install first if `sysml -version` fails (see `opensysml-install`). `sysml -man` is the full
-manual; `sysml -help` lists every flag. Verified with `sysml v0.10.1-1266-gdada45c11`
-(a development build after the v0.10.1 release); features marked *nightly* below are in
-nightly builds and the release after 0.10.1, not in v0.10.1.
+manual; `sysml -help` lists every flag. Verified with the 0.12.0 release build
+(`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`); everything below is in
+0.12.0 unless a release is named.
 
 ## Exit status is the verdict
 
@@ -32,7 +32,7 @@ nightly builds and the release after 0.10.1, not in v0.10.1.
 | `3` | `-render-documents` wrote some documents and failed on others |
 
 Diagnostics go to stderr as `file:line:col: severity[code]: message` followed by the source
-line and a caret (*nightly*: earlier builds print no `[code]`):
+line and a caret:
 
 ```text
 broken.sysml:2:5: error[import-visibility]: import without a visibility indicator: SysML v2 requires public, private or protected before 'import'
@@ -75,7 +75,7 @@ sysml -validate -json -o baseline.json model.sysml          # record today's fin
 sysml -validate -baseline baseline.json model.sysml         # ... and suppress them later (same code, file, message; any line)
 ```
 
-`-format text|json|sarif|junit` (*nightly*) applies to any check, not only `-validate`; `-o`
+`-format text|json|sarif|junit` applies to any check, not only `-validate`; `-o`
 writes the non-text report to a file instead of stdout. A SARIF report carries one rule per
 diagnostic code (`ruleId`), each finding's severity as its `level` and its file relative to the
 working directory. A JUnit report has one `<testsuite>` per file with a `<testcase>` per
@@ -85,13 +85,13 @@ stops analysis (`an error the baseline knows stopped analysis before the later t
 so the exit stays `2` — baselines are for warnings and for findings you are tracking, not a
 way to pass a broken model.
 
-The composite GitHub Action `Open-MBEE/OpenSysML@<tag>` (*nightly*; `action.yml` at the
+The composite GitHub Action `Open-MBEE/OpenSysML@<tag>` (`action.yml` at the
 repository root) installs a release and runs `sysml -validate`; inputs `path`, `format`
 (default `sarif`), `baseline`, `warnings-as-errors`, `strict`, `library-path`, `version`,
 `install`, `upload-sarif`, `sarif-file`; outputs `exit-code` and `sarif-file`:
 
 ```yaml
-- uses: Open-MBEE/OpenSysML@v0.10.1
+- uses: Open-MBEE/OpenSysML@v0.12.0
   with:
     path: model/
     warnings-as-errors: "true"
@@ -108,8 +108,10 @@ sysml -satisfy=Pkg::massReq model.sysml         # one `satisfy ... by ...` asser
 sysml -calc 'Pkg::Range(50.0)' model.sysml      # invoke a calculation with arguments
 sysml -analysis 'Pkg::rangeStudy()' model.sysml # run an analysis or verification case
 sysml -query 'oslc.where=sysml:type="PartDefinition"' model.sysml   # OSLC query
-sysml -run-query "Reports::Violated root=Pkg::car" model.sysml      # a DocumentQueries query, rows and columns
+sysml -run-query "Reports::Violated root=Pkg::car" model.sysml      # a QVTS/DocumentQueries query: rows and columns
+sysml -run-query Reports::Violated -json model.sysml                 # the rows as checks[].table, a failure as checks[].outcome
 sysml -self-check model.sysml                   # the model's own SysMLValidation rules, reflectively
+sysml -metamodel-table                          # the pinned pilot metamodel as JSON (no model); -metaclass-graph writes it as Turtle
 ```
 
 Names use `::` paths; quote names containing spaces or punctuation:
@@ -124,10 +126,15 @@ Names use `::` paths; quote names containing spaces or punctuation:
   standing: violated (witnessed: 1 run under reverse)
 ```
 
-`-run-query` binds query parameters as `name=expression` (`root=Pkg::car`; an object
-`-instantiate` created is bound by its name while the run holds it) and prints
-`✓ Query Reports::Violated returned 12 rows`, the `Columns:` line and one block per row; a
-parameter left unbound is refused with `query X requires binding root`.
+`-run-query` runs a `calc def … :> DocumentQueries::Query`, binds query parameters as
+`name=expression` (`root=Pkg::car`; an object `-instantiate` created is bound by its name
+while the run holds it) and prints `✓ Query Reports::Violated returned 12 rows`, the
+`Columns:` line and one block per row; `returned 0 rows` is an answer (exit `0`). A query
+the model cannot answer exits `2` with `sysml: query X …` followed by QVTS outcome lines —
+`path error at Named(Pkg::cra): … nearest: car` (the query is wrong about the model) or a
+model-error finding (`names 2 elements …`, the model is ambiguous); a parameter left
+unbound is refused with `query X requires binding root`. Authoring, outcomes and the JSON
+records are in `opensysml-qvts`.
 
 `-json` (or `-format json`) emits a single object for scripting; pair it with a check:
 
@@ -138,7 +145,9 @@ sysml -json -validate model.sysml
 
 `status` is `holds`, `fails` or `unresolved`; `diagnostics[]` entries carry
 `severity`, `message`, `file`, `line`, `column`, `pass` and `code`; `checks[]` entries carry
-`subject`, `status`, `values`, `lines`, `rows` and the engine `plan` with its `standing`.
+`subject`, `status`, `values`, `lines`, `rows` and the engine `plan` with its `standing`; a
+query check adds `table` (`columns`, `rows[] {element, cells}`) when it answered and
+`outcome` (`pathError`/`modelError`, `step`, `failures`/`findings`) when it failed.
 
 ## Running behavior
 
@@ -154,7 +163,7 @@ sysml -record-run 'Pkg::rangeStudy()' -record-into Pkg::Records model.sysml   # 
 sysml -compare-results results.json -runs 100 -seed 1 migrated.sysml   # rerun a tool's stored configurations and table the differences
 ```
 
-Use cases execute under `-action` like actions (*nightly*). A default run of a behavior with
+Use cases execute under `-action` like actions. A default run of a behavior with
 concurrent, conflicting writes reports its values only up to the order the Kernel Semantic
 Library fixes and marks the rest:
 
@@ -177,9 +186,9 @@ and a `min/mean/max/p50/p90` line plus histogram per observed feature (`standing
 (observed: 20 rows)`); `-observe` without `-runs`, or `-runs` without `-seed` or a fixed
 `-draws`, is refused with a message naming the missing flag. `-tool-dry-run` reports
 `no ToolExecution-annotated action was reached; nothing to preview` when the case names no
-external tool. `-runs`, `-observe`, `-clock-step`, `-tool-dry-run`, `-record-into` and
-`-compare-results` are *nightly*; `-compare-results` reads the JSON `-migrate
--migration-results` wrote (see `opensysml-migrate-v1`).
+external tool. `-compare-results` reads the JSON `-migrate -migration-results` wrote (see
+`opensysml-migrate-v1`). `-action … -trace` of an `ExecuteAction` case prints the trace the
+service's `action_trace` capability answers.
 
 ## Behavior and verification controls
 
@@ -202,29 +211,32 @@ external tool. `-runs`, `-observe`, `-clock-step`, `-tool-dry-run`, `-record-int
 
 ## Projects, libraries and archives
 
-- A directory holding a `.project.json` is an OMG project-interchange project (*nightly*);
+- A directory holding a `.project.json` is an OMG project-interchange project;
   naming it loads its files and the installed projects its `usage` entries name, looked for
-  under the project's own library directory (`.sysand/lib`) and under every directory
-  `-library-root DIR` adds (repeatable or `PATH`-style; also `OPENSYSML_LIBRARY_ROOTS`).
+  under the project's own library directories (`lib/`, `.sysand/lib`) and under every
+  directory `-library-root DIR` adds (repeatable or `PATH`-style; also
+  `OPENSYSML_LIBRARY_ROOTS`); a `usage` may carry a semver range, and a dependency whose
+  version does not satisfy it is refused.
 - `.kpar` archives are read wherever a project directory is: beside a model on the command
   line, under a library root, or as `OPENSYSML_LIBRARY_PATH` in place of the bundled library.
   `sysml -bundle proj -o widgets.kpar` writes one (`wrote widgets.kpar (Widgets 1.0.0, 4
-  files)`; without `-o`, `<name>-<version>.kpar`); `sysml -unbundle widgets.kpar -o dir`
-  unpacks it.
+  files)`; without `-o`, `<name>-<version>.kpar`) holding the files `.meta.json` records;
+  `sysml -unbundle widgets.kpar -o dir` unpacks it.
 - `OPENSYSML_LIBRARY_PATH` replaces the bundled standard library with a directory, a `.kpar`
   archive or a directory of the OMG archives.
 
 ## Other operations (each has its own skill)
 
-- Conversion/export: `-convert sysml|kerml|ttl|api-json [-id qualified|uuid] -o OUT`
-  (`opensysml-convert-rdf`).
+- Conversion/export: `-convert sysml|kerml|ttl|api-json [-id qualified|uuid]
+  [-keep-line-breaks] [-include-library-stubs] -o OUT` (`opensysml-convert-rdf`); `-convert
+  sysml` lays the notation out one statement per line unless `-keep-line-breaks` keeps the
+  source's.
 - SysML v1 migration: `-migrate sysml -o OUT model.xmi` (`opensysml-migrate-v1`).
-- Documents and diagrams: `-render-document NAME -doc-form markdown|html|pdf`, `-render VIEW`
+- Documents and diagrams: `-render-document NAME -doc-form markdown|html|pdf|asciidoc`, `-render VIEW`
   with `-render-form`, `-render-show`, `-render-depth`, `-render-lines`, `-render-run
   timeline|sequence=PATH`, `-list [-list-kind KIND]` (`opensysml-documents`). `-render-form
   drawio -o view.drawio` writes an editable diagrams.net (draw.io) file — name the form, the
-  `-o` extension does not choose it; a sequence view and `-diagram-form` refuse it; verified
-  with `sysml v0.11.0-1195-g14e53c052`, in nightly builds and the release after v0.11.0. `sysml model.sysml
+  `-o` extension does not choose it; a sequence view and `-diagram-form` refuse it. `sysml model.sysml
   -import-diagram view.drawio [-view NAME] [-dry-run]` reads the file back after an edit in
   draw.io: the view is rendered and exported again, and only what differs is written into the
   view's body as `DiagramLayout` metadata (a moved/resized/collapsed node → `Layout`, a re-routed
@@ -232,8 +244,7 @@ external tool. `-runs`, `-observe`, `-clock-step`, `-tool-dry-run`, `-record-int
   `Picture`); `-dry-run` prints the planned edits (`Layout about PumpStation::station::tank`) and a
   unified diff of each file and writes nothing; without it the files are rewritten in place
   (`pump-station.sysml: written`). An untouched export answers `nothing differs from the
-  rendering of …; nothing to import`. Verified with `sysml v0.11.0-1280-gb835c3c4f`, in nightly builds and the release after
-  v0.11.0; the workflow is in `opensysml-drawio`.
+  rendering of …; nothing to import`. The workflow is in `opensysml-drawio`.
 - Imports from tables: `-import data.csv -import-as values` (with `-import-map`,
   `-import-format`), then `-convert sysml -o OUT` writes the result; `-import-dry-run` previews.
 - Code generation: `-compile Pkg::Fib -target c|go -o fib`; `-source` writes the generated
@@ -268,3 +279,10 @@ external tool. `-runs`, `-observe`, `-clock-step`, `-tool-dry-run`, `-record-int
 - Exit `0` printed after a pipe through `head` is `head`'s status, not `sysml`'s.
 - `-format sarif|junit` still prints `did not analyse cleanly` on stderr; the report is on
   stdout (or in `-o`).
+- `warning[kerml-notation]: … typed by …` in a `.sysml` file: SysML spells a typing `:` or
+  `defined by`; `typed by` is KerML's. Under `-strict` it is an error.
+- `warning[library-declared-twice]`: two loaded files declare the same `library package`
+  (a vendored copy of the standard library beside the bundled one, a library vendored twice);
+  the second copy is ignored — remove it or point `OPENSYSML_LIBRARY_PATH` at one.
+- The `-to`, `-pdf-title-page`, `-pdf-toc` and `-pdf-number-sections` spellings were removed
+  in 0.12.0; use `-convert`, `-doc-title-page`, `-doc-toc`, `-doc-number-sections`.

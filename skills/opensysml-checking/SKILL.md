@@ -31,7 +31,7 @@ the REPL (`opensysml-repl`) and every language client (`verify_constraint`,
 |---|---|---|
 | `constraint c { expr }` in a part | `-constraint Pkg::Part::c` | Evaluated with the definition's defaults; add `-instantiate Pkg::usage` to evaluate on a configured object |
 | `constraint def C { in x; ... }` | `-constraint 'Pkg::C(3.0)'` | Arguments positional |
-| `requirement def R { subject s : T; require constraint {...} }` | `-requirement Pkg::r` on a *usage* `requirement r : R;` | Undecided until the subject is bound |
+| `requirement def R { subject s : T; require constraint {...} }` | `-requirement Pkg::r` on a *usage* `requirement r : R;` | Undecided until the subject is bound. The verdict is `allTrue(assumptions) implies allTrue(constraints)` (`Requirements::RequirementConstraintCheck`): a subject that fails an `assume constraint` *satisfies* the requirement, reported `vacuous:` so it is not mistaken for a real pass; nested requirement usages are subrequirements, each `assumptions implies constraints` on the container's subject |
 | `satisfy r by part;` | `-satisfy` (all) or `-satisfy=Pkg::r` | The reliable way to check requirements against parts |
 | `calc def F { in a; return : Real = ...; }` | `-calc 'Pkg::F(3, 4)'` | Prints `= value` |
 | `analysis def A { ... }` / `verification def V { ... }` | `-analysis 'Pkg::a()'`, `-analysis 'Pkg::V() Pkg::object'` | Reports outputs and the verdict of the case's `verify` |
@@ -39,7 +39,11 @@ the REPL (`opensysml-repl`) and every language client (`verify_constraint`,
 | Model's own validation rules | `-self-check`, `-self-check-package Pkg` | Applies `SysMLValidation` constraints reflectively |
 
 Several checks can be combined in one invocation; the exit is the worst verdict. Always
-pass every file the checked elements depend on. A false constraint prints the assertion:
+pass every file the checked elements depend on. A verification verdict also carries
+*notes* — features a solver question read as one value while only the default `0..*`
+multiplicity governs them, object-holding features whose own assertions it did not state —
+on every surface (`-json`, the gRPC `Verdict`, capability `verdict_notes`); read them before
+trusting a `✓`. A false constraint prints the assertion:
 
 ```text
 ✗ Constraint F::Car::lim failed
@@ -47,8 +51,7 @@ pass every file the checked elements depend on. A false constraint prints the as
   standing: violated (witnessed: 1 run under reverse)
 ```
 
-A behavior run reports values that depend on the order of concurrent steps with a marker
-(nightly builds and the release after 0.10.1):
+A behavior run reports values that depend on the order of concurrent steps with a marker:
 
 ```text
   Results:
@@ -125,8 +128,8 @@ PY
 (each with `subject`, `status`, `lines` and its engine `plan`), `diagnostics`, `output`,
 `errors`. Treat `unresolved` as a failure in CI: it means the gate did not run, not that it
 passed. `-format sarif|junit`, `-baseline FILE` (suppress known findings) and
-`-warnings-as-errors` are in nightly builds and the release after 0.10.1, as is the
-composite GitHub Action `Open-MBEE/OpenSysML@<tag>` that runs the validation gate
-(`opensysml-cli`). Pin the `sysml` version (`sysml -version`; this skill was verified with
-`sysml v0.10.1-1266-gdada45c11`) and set `OPENSYSML_JOBS`/`-jobs` for speed; keep budgets
+`-warnings-as-errors` and the composite GitHub Action `Open-MBEE/OpenSysML@<tag>` run the
+validation gate (`opensysml-cli`); `-run-query … -json` gates a QVTS query the same way
+(`table` present = answered, `outcome` present = failed; `opensysml-qvts`). Pin the `sysml`
+version (`sysml -version`; this skill was verified with the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`)) and set `OPENSYSML_JOBS`/`-jobs` for speed; keep budgets
 explicit (`opensysml-troubleshooting`).

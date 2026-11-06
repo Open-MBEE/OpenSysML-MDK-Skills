@@ -40,10 +40,23 @@ print(model.eval("mass", subject="Vehicles::myCar"))   # 1300.0 (plain Python va
   `GetDiagnostics`) is not exposed by this client — call the RPC over Connect JSON for that
   (`opensysml-service`).
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client installed
-from `client/python` of the same checkout; package version `0.10.1`. Rows marked *nightly*
-are methods of the *client* as well as RPCs of the service: the `opensysml==0.10.1` package has
-no `check_action` (`AttributeError`), whatever service it talks to. Install the night's client by
+
+**0.12.0 in this client.** A service that requires a bearer token takes it as `token=` on `opensysml.connect(host, port, …)` (a call
+without it fails `unauthenticated`); `convert` takes `compact`, `omit_derived`/`keep_derived`,
+`include_check_diagnostics`, `id_form` and `include_library_stubs` in the client's spelling
+(capabilities `convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`);
+`render_document` takes the `asciidoc` form (`render_document_asciidoc`); an action run carries
+its trace (`action_trace`); a verdict carries its notes (`verdict_notes`). QVTS: the document-query
+call `model.run_document_query(query_id, bindings=)` runs a `calc def … :> DocumentQueries::Query` and answers typed rows, but no 0.12.0
+client decodes the `QueryOutcome` error detail — a query the model cannot answer is the service's
+`failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
+…, which has no such feature`); run `sysml -run-query … -json` for the structured record
+(`opensysml-qvts`).
+
+Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`) with the client installed from `client/python` of the same checkout.
+Rows marked *nightly* arrived after 0.10.1 and are in `opensysml==0.12.0` on PyPI: the
+`opensysml==0.10.1` package has no `check_action` (`AttributeError`), whatever service it talks
+to. For an unreleased commit install the night's client by
 exact version (`pip install opensysml==<next>.dev<yyyymmdd>`, listed in PyPI's release history;
 `pip install --pre opensysml` takes the newest) — it provisions the same night's `sysml-grpc` —
 or `pip install -e client/python` from a `develop` checkout. A nightly client against a v0.10.1

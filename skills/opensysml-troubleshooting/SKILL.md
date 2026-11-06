@@ -17,8 +17,8 @@ decision what you expected? Each layer has its own signal.
 `sysml: FILE did not analyse cleanly; no check was made` — nothing downstream ran. Read the
 *first* diagnostic (`file:line:col: severity[code]: message`); later ones are often
 consequences. Every code is explained by `sysml -explain <code>` (REPL `%explain-code`),
-with the specification clause behind it; bare `sysml -explain` lists them all (nightly
-builds and the release after 0.10.1; verified with `sysml v0.10.1-1266-gdada45c11`).
+with the specification clause behind it; bare `sysml -explain` lists them all (verified
+with the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`)).
 
 | Diagnostic | Usual cause / fix |
 |---|---|
@@ -28,6 +28,10 @@ builds and the release after 0.10.1; verified with `sysml v0.10.1-1266-gdada45c1
 | `error[relationship-target-kind]: satisfy target must be a requirement usage, found requirementDef` / `error[subsetting-featuring-types]: Must be an accessible feature (use dot notation for nesting)` | `satisfy` needs a `requirement r : Def;` usage visible from the `satisfy`, not a def or a nested path. |
 | `error[syntax]: expected a namespace member` (and other `error[syntax]`) | Stray `;`, missing `;` or `}`; OpenSysML never fails to parse but reports the error node. Under `-strict`, notation outside the OMG grammar is an error too (`nonstandard-notation`). |
 | `warning[redefinition-multiplicity]: Redefining feature should not have smaller multiplicity lower bound` | A usage narrows `[n..m]` below its definition's; fix the usage or the definition. Warnings exit `0` unless `-warnings-as-errors`. |
+| `warning[kerml-notation]: … typed by …` | A `.sysml` file spells a typing the KerML way; write `:` or `defined by`. An error under `-strict`. |
+| `warning[library-declared-twice]: library package X is declared by … and …` | Two loaded files declare the same library package (a copy of the standard library under the folder or `OPENSYSML_LIBRARY_PATH`, a user library vendored twice); the later copy is ignored — remove one. |
+| `warning[behavior-start-failed]` on `%features`/`-instantiate` | A behavior the object exhibits/performs could not start; the object stands, the failure is recorded on that behavior (`failed: …`) and no longer fails the instantiation. |
+| `sysml: query X names no element …` / `reads feature m of …, which has no such feature` / `names 2 elements …` | A QVTS query outcome (exit `2`): the first two are *path errors* (the query is wrong about the model — fix the name, narrow with `WhereType`, or state `tolerate = true`), the last a *model error* (an ambiguous name in the model). `returned 0 rows` is a valid answer, exit `0` (`opensysml-qvts`). |
 | `-format bogus is not a report format; the formats are text, json, sarif and junit`, `-render-show: unknown notation element "pins"; the elements are ...` | Usage errors (exit `2`) list the values the flag takes; `sysml -help` has every flag. |
 
 `sysml -validate` on every edit is the cheapest guard; `-json -validate` gives the same
@@ -69,6 +73,10 @@ The `standing:` line says why:
 - A result printed as `x = 1 (order-dependent; 2 choice points — explore shows the set)`
   depends on how concurrent steps were ordered: run `-schedule explore` for the whole set,
   `-check-diverge` for the features that diverge, or fix the model's ordering.
+- A requirement passes although its subject is wrong: an `assume constraint` the subject
+  fails makes the requirement vacuously true (`allTrue(assumptions) implies
+  allTrue(constraints)`), printed `vacuous:`; check the assumptions, or the verdict's notes
+  (`opensysml-checking`).
 - Empty rendering: `note: V::x renders empty` precedes a diagram with nothing in it and the
   reason (nothing exposed, the filter rejects everything, nothing resolves, or nothing the
   view exposes is shown by a rendering of this kind); `-list all` shows what the view is.
@@ -81,8 +89,7 @@ The `standing:` line says why:
   router; render with a native `sysml` (`opensysml-wasm`). An edge written with
   `edgeStyle=orthogonalEdgeStyle` and no anchors or waypoints while the others carry them is one
   the router found no path for (seen when both ports sit on the top border with no room above
-  them, under `sysml v0.11.0-1195-g14e53c052`); draw.io routes it on open, or give the layout
-  room. `-o view.drawio` without `-render-form drawio` writes Mermaid into the file.
+  them); draw.io routes it on open, or give the layout room. `-o view.drawio` without `-render-form drawio` writes Mermaid into the file.
 - `-import-diagram` answers `nothing differs from the rendering of …; nothing to import`: the
   file is the export, or the edit is one no annotation carries (a moved label, a recoloured
   port, a re-anchored note) — those come back as reports, as do `cell free1 names no element;
@@ -121,8 +128,9 @@ diagnostic and exit `2`, never a hang.
 | `FLEXO_INTEROP_TOKEN` | Token `-sync-apply` and branch-URL `-convert` present to a SysML v2 API endpoint |
 | `OPENSYSML_TOOLS`, `OPENSYSML_ENGINES`, `OPENSYSML_TOOL_TIMEOUT`, `OPENSYSML_TOOL_MAX_OUTPUT` | External analysis tools/engines, their timeout and output cap |
 | `OPENSYSML_GRPC_MAX_HELD_OBJECTS`, `OPENSYSML_GRPC_INDEX_POOL` | Service-side instance and parse-cache limits |
-| `OPENSYSML_WEASYPRINT`, `OPENSYSML_PANDOC`, `OPENSYSML_MMDC`, `OPENSYSML_MMDC_PUPPETEER` | PDF/diagram toolchain for `-render-document` |
-| `OPENSYSML_LIBAVOID_WASM` | A libavoid WebAssembly module (built against the libavoid-js 0.4.5 bindings) that routes `-render-form drawio` edges in place of the embedded one; an unreadable path fails the render (`sysml: libavoid: open …: no such file or directory`). Native builds only; nightly builds and the release after v0.11.0 |
+| `OPENSYSML_WEASYPRINT`, `OPENSYSML_PANDOC`, `OPENSYSML_MMDC`, `OPENSYSML_MMDC_PUPPETEER`, `OPENSYSML_ASCIIDOCTOR` | PDF/diagram/AsciiDoc toolchain for `-render-document` and `rep language "asciidoc"` bodies |
+| `OPENSYSML_GRPC_TOKEN`, `OPENSYSML_MCP_TOKEN` | Bearer token `sysml-grpc` / `sysml-mcp -http` require from clients (`opensysml-service`); a private service a client spawns no longer inherits `OPENSYSML_GRPC_TOKEN` from the parent process in 0.12.0 |
+| `OPENSYSML_LIBAVOID_WASM` | A libavoid WebAssembly module (built against the libavoid-js 0.4.5 bindings) that routes `-render-form drawio` edges in place of the embedded one; an unreadable path fails the render (`sysml: libavoid: open …: no such file or directory`). Native builds only |
 
 Set them where the *process doing the work* runs: for a Python/Node client that spawns a
 private `sysml-grpc`, that is the client's environment; for a shared service, the
@@ -139,7 +147,8 @@ parallelises independent checks and file loads. The full list is
 | Unpinned-download refusal | A development build of the client; set `OPENSYSML_ALLOW_UNPINNED_DOWNLOAD=1` only for local development, or pin a release binary. |
 | `StaleServiceError` / version mismatch | Service older than the client; upgrade the binary or `OPENSYSML_GRPC_BINARY`. |
 | `MissingCapabilityError` | The service lacks that feature; check `server_info()` / `GetServerInfo.capabilities` and upgrade or avoid the call (`opensysml-service`). |
-| `connection refused` on `OPENSYSML_SERVICE` | Service not running on that address; start `sysml-grpc -port N` and check `/health`. |
+| `connection refused` on `OPENSYSML_SERVICE` | Service not running on that address; start `sysml-grpc -port N` and check `/health`. A 0.12.0 service binds loopback unless `-host` says otherwise. |
+| `UNAUTHENTICATED` / `AuthenticationError` | The service requires a bearer token (`-token-file`/`-token`/`OPENSYSML_GRPC_TOKEN`); pass it in the client's `token` option. `sysml-grpc` refuses to serve a non-loopback address without a token and TLS unless `-allow-unauthenticated` / `-allow-insecure-token-transport` say so (`opensysml-service`). |
 | Browser: CORS or mixed-content error | `sysml-grpc -cors-allowed-origins <origin>` and TLS (`-tls-cert/-tls-key`) for non-localhost. |
 | Instances disappear between calls | Objects are held by the service; reuse the same `Connection`/model handle and keep it open. |
 

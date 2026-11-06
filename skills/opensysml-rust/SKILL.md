@@ -20,12 +20,25 @@ opensysml = "0.10"               # crates.io release (0.10.1), pinned to the mat
 The API is **blocking** (no async runtime required; wrap in `spawn_blocking` from Tokio if
 needed) and speaks Connect/protobuf to `sysml-grpc`; JSON is only a debugging encoding.
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the crate at
-`client/rust/opensysml` of the same checkout (`cargo test -p opensysml` green with
-`OPENSYSML_GRPC_BINARY` pointing at that build). Anything marked *nightly* is a method of the
-crate as well as an RPC of the service: `opensysml = "0.10"` from crates.io has no `check_action`
-(compile error), and crates.io gets no snapshot — use the `git = "…", branch = "develop"` or `path`
-dependency above until the release after 0.10.1. A nightly client against a v0.10.1 service is
+
+**0.12.0 in this client.** A service that requires a bearer token takes it as `Connection::external_with_token(address, token)` (a call
+without it fails `unauthenticated`); `convert` takes `compact`, `omit_derived`/`keep_derived`,
+`include_check_diagnostics`, `id_form` and `include_library_stubs` in the client's spelling
+(capabilities `convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`);
+`render_document` takes the `asciidoc` form (`render_document_asciidoc`); an action run carries
+its trace (`action_trace`); a verdict carries its notes (`verdict_notes`). QVTS: the document-query
+call `run_document_query` runs a `calc def … :> DocumentQueries::Query` and answers typed rows, but no 0.12.0
+client decodes the `QueryOutcome` error detail — a query the model cannot answer is the service's
+`failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
+…, which has no such feature`); run `sysml -run-query … -json` for the structured record
+(`opensysml-qvts`).
+
+Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`) with the crate at `client/rust/opensysml` of the same checkout (`cargo
+test -p opensysml` green with `OPENSYSML_GRPC_BINARY` pointing at that build). Anything marked
+*nightly* arrived after 0.10.1 and is in `opensysml = "0.12"` on crates.io; `opensysml = "0.10"`
+has no `check_action` (compile error), and crates.io gets no snapshot — for an unreleased commit
+use the `git = "…", branch = "develop"` or `path` dependency above. A newer client against an
+older service is
 refused with `Error::MissingCapability`.
 
 ```rust

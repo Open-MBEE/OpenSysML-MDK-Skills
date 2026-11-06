@@ -28,9 +28,10 @@ sync, `-compile`, the HTML and PDF document forms, FMU import, profiling and the
 status 2 (`make build-re` is the native counterpart, `bin/re/sysml`). Releases publish
 `sysml-wasm.wasm` with its `wasm_exec.js` (the npm package `@openmbee/opensysml-wasm`) and
 `sysml-prod.wasm.gz`, the gzip-compressed browser build of the `sysml` REPL the project's
-site runs (about 13 MB; 54 MB inflated), which is not a JSON-RPC module. Verified with
-`sysml v0.10.1-1266-gdada45c11`; the `build-wasm-re` name and `RenderView` are in nightly
-builds and the release after 0.10.1.
+site runs (about 13 MB; 54 MB inflated), which is not a JSON-RPC module. Verified with the
+0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`); the
+`sysml-engine` module takes an `advance` request (simulated time) since 0.12.0, and the
+WASI build no longer warns about the record cache it cannot write.
 
 ## Running the CLI/REPL/LSP as WASM
 
@@ -57,8 +58,8 @@ works, but the `js` and `wasip1` builds carry no edge router (native builds rout
 exports with libavoid under wazero), so the file carries
 `<!-- notice: edges not routed: this build runs no router; draw.io routes them when the file opens -->`
 and its edges have no anchors or waypoints until draw.io lays them out on open
-(`wasip1` build of `sysml v0.11.0-1195-g14e53c052` under Node's `node:wasi`; nightly builds and the release
-after v0.11.0). Re-render with a native `sysml` for a file that opens the same everywhere.
+(`wasip1` build under Node's `node:wasi`). Re-render with a native `sysml` for a file that
+opens the same everywhere.
 
 What is refused, with an explicit message: anything that starts a process (SMT solvers,
 external engines, PDF converters, `-compile`), `sysml-grpc -transport grpc|connect`

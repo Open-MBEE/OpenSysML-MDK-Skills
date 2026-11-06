@@ -33,8 +33,7 @@ printf '%%load vehicle.sysml\n%%instantiate Vehicles::myCar\n%%eval myCar.mass\n
 ```
 
 Pass `-strict` to load under strict conformance; the banner goes to stderr. Verified with
-`sysml v0.10.1-1266-gdada45c11`; `%explain-code`, `%runs`, `%run-query`, `%render-run`
-forms and `depth=` are in nightly builds and the release after 0.10.1.
+the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`).
 
 ## Session and model commands
 
@@ -45,12 +44,13 @@ forms and `depth=` are in nightly builds and the release after 0.10.1.
 | `%print [NAME]` | Pretty-print the model or one element in SysML notation |
 | `%search SUBSTRING` | Find elements by name |
 | `%list`, `%documents`, `%views [diagrams] [kind...]` | Session declarations; documents by the names `%render-document` reads; views (and their kinds) by the names `%render` reads |
+| `%workspace` | The directory a root namespace nothing declares is looked for under: a submission naming `Vehicles::car` loads the `.sysml`/`.kerml` file under it that declares `Vehicles`, as `%load` would, in the same submission |
 | `%builtins` | List the bundled standard-library packages |
 | `%save FILE` | Write the live model (`.sysml`, `.ttl`, `.json` by extension) |
 | `%clear` | Drop the model and all objects |
 | `%strict [on\|off]`, `%lint [CODE on\|off]`, `%verbosity quiet\|normal\|debug`, `%trace on\|off` | Session settings; `%lint` alone lists the lints and their state |
 | `%explain-code [CODE...]` | Explain a diagnostic code (`unresolved: error (name-resolution)` …, with the specification clause); bare, list every code |
-| `%query OSLC` | OSLC query; `%run-query NAME [p=expr...]` runs a model-defined query |
+| `%query OSLC` | OSLC query; `%run-query NAME [p=expr...]` runs a QVTS query (a `calc def … :> DocumentQueries::Query`) and prints its rows, or the `path error at …`/model-error lines when the model cannot answer it (`opensysml-qvts`) |
 | `%repo [URL]`, `%projects`, `%publish [-d] [--project=P] [--branch=B] NAME` | SysML v2 API repository workflow (`FLEXO_SYSMLV2_URL`, token in `FLEXO_INTEROP_TOKEN`) |
 | `%quit` (also `%exit`) | Exit |
 
@@ -67,7 +67,10 @@ forms and `depth=` are in nightly builds and the release after 0.10.1.
 ```
 
 `%eval` reports `<undetermined>` for values that depend on unbound features and `<unset>`
-for features without a value (see `opensysml-sysml-authoring`).
+for features without a value (see `opensysml-sysml-authoring`). A `= …` result line shows
+the values the result holds in its effective multiplicity: `2 + 2` answers `4`, `add(2, 2)`
+(a calc returning `[0..*]`) answers `[4]`, and a `[0..*]` feature nothing binds answers `[]`.
+`%instantiate` of the same usage twice makes two objects (`#1`, `#2`), each checked on its own.
 
 ## Checking
 
@@ -115,11 +118,11 @@ the set)`.
 %record rangeStudy(10) rover1 into Pkg    # run and record AnalysisRecords into the model
 %sweep rangeStudy() rover1 n=1..8:2   # one run per value; %samples N SEED name draws instead
 %runs 20 7 Race x clock               # run an action 20 times (seed 7; no seed under %draws min|max|average), table and distribute x and the clock
-%run-query Reports::Violated root=car # a DocumentQueries query, rows and columns
+%run-query Reports::Violated root=car # a QVTS/DocumentQueries query, rows and columns (opensysml-qvts)
 %tool case|action(args) [object]      # run via an external tool (OPENSYSML_TOOLS)
 %import data.csv [map map.json] [format csv|tsv|json|jsonl] [dry-run]   # set feature values from a table
 %view NAME | %graphs NAME | %render NAME [form [palette] [style] [ports] [link=T] [depth=N]]
-%render NAME drawio                   # the diagrams.net (draw.io) file on stdout; `sysml v0.11.0-1195-g14e53c052`, in nightly builds and the release after v0.11.0
+%render NAME drawio                   # the diagrams.net (draw.io) file on stdout
 %viz [--view=TREE|STATE|...] [--style=S...] [form] NAME...   # draw elements with no view declared
 %render-document NAME [mermaid|dot|plantuml|d2 [pilot|cameo]]
 %render-run timeline|sequence [form] [link=T]   # diagram of the recorded run (needs %trace on before the run)
@@ -138,7 +141,12 @@ documents can need external tools; see `opensysml-documents`.
 - `error: no instance of "Pkg::rover1" (use %instantiate first)`: behavior and object
   commands need an object; `%instantiate X` first, then refer to it by name or `#id`.
 - `error: unresolved reference: Nope — did you mean ...?`: the name is not in the loaded
-  model; `%search` finds the spelling, `%explain-code unresolved` the rule.
+  model; `%search` finds the spelling, `%explain-code unresolved` the rule. A root namespace
+  no loaded file declares is looked for under `%workspace` first (a file declaring it there
+  loads on its own), so an unexpected load means a stray file under that directory.
+- `%run-query` answers `query X names no element …` / `reads feature m of …, which has no
+  such feature`: the query is wrong about the model (a path error), not the session — the
+  `nearest:` hint names the spelling; `returned 0 rows` is a valid empty answer.
 - A `%send` is ignored: the signal type must be one a transition `accept`s and the state
   machine must have been started with `%state`; check `%current` and `%events`.
 - Infinite-looking `%action`: budgets (`%budget`, `OPENSYSML_MAX_ACTION_STEPS`) stop it and

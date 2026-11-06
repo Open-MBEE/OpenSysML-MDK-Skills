@@ -18,16 +18,26 @@ and `docs/reference/wire-contract.md`. Coding-agent hosts (Claude Code, Cursor, 
 talk to `sysml-grpc` directly: they run `sysml-mcp`, the MCP server built from the same
 tree, which exposes the same operations as MCP tools.
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build; the last release is
-v0.10.1). Everything marked *nightly* below is absent from a v0.10.1 service and arrives
-in nightly builds and the release after 0.10.1.
+Verified against the 0.12.0 release build (`sysml-grpc v0.11.0-1980-g72c5b132f`, built from
+`release/0.12.0`). Everything below is in 0.12.0; what a 0.11.0 service lacks is named.
+
+**0.12.0 binds loopback and asks for a token.** `sysml-grpc` listens on `127.0.0.1` unless
+`-host` names an address; an address other machines reach is served only with a bearer token
+(`-token-file FILE`, `-token STRING` or `OPENSYSML_GRPC_TOKEN`) *and* TLS (`-tls-cert`/
+`-tls-key`), or with `-allow-unauthenticated` / `-allow-insecure-token-transport` stated
+explicitly. Clients send the token as `Authorization: Bearer …` (the `token` option of every
+client library); a call without it is `unauthenticated`. A private service a client spawns
+no longer inherits `OPENSYSML_GRPC_TOKEN` from the parent. Every call is logged at INFO with
+its method, status and duration.
 
 ## Start it
 
 ```bash
-sysml-grpc                                  # :50051, logs to stderr
+sysml-grpc                                  # 127.0.0.1:50051, logs to stderr
 sysml-grpc -port 0 -report-address          # pick a free port and print it on stdout
 sysml-grpc -port 50051 -health-port 0 -log-level warn
+sysml-grpc -host 0.0.0.0 -token-file /run/secrets/sysml-token -tls-cert srv.pem -tls-key srv.key   # reachable from other machines
+sysml-grpc -host 0.0.0.0 -allow-unauthenticated   # inside a trusted network only; refused without the flag
 sysml-grpc -exit-with-parent                # die with the process that spawned it
 sysml-grpc -transport stdio                 # Connect over stdin/stdout for embedding
 sysml-grpc -cors-allowed-origins https://app.example.org -tls-cert cert.pem -tls-key key.pem
@@ -50,11 +60,11 @@ parsed models by `modelHash`, so several clients can reuse one parse.
 
 ```bash
 curl -s http://127.0.0.1:50051/health
-# {"service":"sysml-grpc","status":"ok","version":"v0.10.1"}
+# {"service":"sysml-grpc","status":"ok","version":"v0.12.0"}
 
 curl -s -X POST http://127.0.0.1:50051/sysml.SysMLService/GetServerInfo \
      -H 'Content-Type: application/json' -d '{}'
-# {"version":"v0.10.1", "capabilities":["type_facts","convert","verification",...]}
+# {"version":"v0.12.0", "capabilities":["type_facts","convert","verification",...]}
 
 curl -s -X POST http://127.0.0.1:50051/sysml.SysMLService/ParseFile \
      -H 'Content-Type: application/json' \
@@ -65,8 +75,8 @@ curl -s -X POST http://127.0.0.1:50051/sysml.SysMLService/ParseFile \
 #                  "code":"unresolved"}]}
 ```
 
-A nightly build answers `/health` with its own string, e.g. `"version":"v0.10.1-1266-gdada45c11"`;
-that build advertised these 71 capabilities, in this order (a v0.10.1 service advertises 63: all but the eight named below):
+A development build answers `/health` with its own string, e.g. `"version":"v0.11.0-1980-g72c5b132f"`;
+the 0.12.0 service advertises these 78 capabilities, in this order:
 
 ```
 type_facts convert verification query oslc_query enum_values evaluate_subject
@@ -75,28 +85,34 @@ strict_conformance document_query render_document parse_sources complex_values
 structured_values measurement_refs function_values set_values tensor_values
 verification_verdicts infinity_value diagnostic_codes schedule case_evaluations
 schedule_explore final_time engines metaobject_values undetermined_value edit_documents
-performer render_document_html connection_authoring satisfy_authoring
-requirement_constraint_authoring member_modifiers transition_authoring
-verification_questions verification_arguments verification_objective_authoring runs
-self_check record_run metadata_authoring metadata_prefix_authoring sequence_authoring
-implicit_parameters constraint_body_authoring state_action_authoring import_authoring
-documentation_authoring comment_authoring action_body_statement_authoring migrate
-big_int_values rational_values state_trace render_view export_graphs import_data
-compare_results check convert_documents convert_compact parse_sources_affected
-render_document_file_name order_dependence
+performer render_document_html render_document_asciidoc connection_authoring
+satisfy_authoring requirement_constraint_authoring member_modifiers transition_authoring
+verification_questions verification_arguments query_order_by
+verification_objective_authoring runs self_check record_run metadata_authoring
+metadata_prefix_authoring sequence_authoring implicit_parameters constraint_body_authoring
+state_action_authoring import_authoring documentation_authoring comment_authoring
+action_body_statement_authoring migrate big_int_values rational_values state_trace
+action_trace render_view export_graphs import_data compare_results check
+convert_documents convert_compact convert_library_references convert_library_stubs
+convert_check_diagnostics parse_sources_affected render_document_file_name
+order_dependence verdict_notes
 ```
 
-Of these, `runs`, `self_check`, `record_run`, `import_data`, `compare_results`, `check`,
-`render_document_file_name` and `order_dependence` are nightly; a v0.10.1 service does not
-list them.
+New in 0.12.0: `render_document_asciidoc` (`RenderDocument.form = asciidoc`),
+`query_order_by` (`Query.orderBy`), `action_trace` (`ExecuteAction` answers the trace and
+events), `convert_library_stubs` / `convert_check_diagnostics` (`Convert` options
+`includeLibraryStubs`, `includeCheckDiagnostics`; `convert_compact`, `omitDerived`/
+`keepDerived` and `idForm` already existed), `verdict_notes` (a `Verdict` carries the
+notes its answer rests on), and `parse_sources_affected` (`ParseSources.baseModelHash`
+answers the `affected` documents).
 
 Unary Connect paths are `/sysml.SysMLService/<Method>`; `Content-Type: application/json`
 selects JSON, `application/proto` protobuf. The 31 RPCs are `GetServerInfo`, `ParseFile`,
 `ParseSources`, `GetSymbol`, `GetDiagnostics`, `Evaluate`, `Instantiate`, `ExecuteAction`,
 `ExecuteState`, `Convert`, `Migrate`, `ApplyEdits`, `VerifyConstraint`, `VerifyRequirement`,
 `VerifySatisfaction`, `ValidateInstance`, `EvaluateCalc`, `RunAnalysis`, `RunSweep`,
-`ListEngines`, `Query`, `RunDocumentQuery`, `RenderDocument`, `RenderView`, `ExportGraphs`
-and, nightly, `CheckBehavior`, `RunRuns`, `SelfCheck`, `RecordRun`, `ImportData`,
+`ListEngines`, `Query`, `RunDocumentQuery`, `RenderDocument`, `RenderView`, `ExportGraphs`,
+`CheckBehavior`, `RunRuns`, `SelfCheck`, `RecordRun`, `ImportData` and
 `CompareResults`. Request/response field names come from the proto (`model_hash` is
 `modelHash` in JSON); `grpcurl -plaintext 127.0.0.1:50051 describe sysml.SysMLService`
 lists them via reflection.
@@ -105,7 +121,24 @@ Most calls after `ParseFile` take the returned `modelHash`, e.g.
 `{"modelHash":"...","expression":"P::a.x"}` for `Evaluate` (optional `contextSymbolId`,
 `subjectSymbolId` scope the evaluation).
 
-## The nightly surface, by request
+## QVTS queries over the service
+
+`RunDocumentQuery {modelHash, queryId, bindings:[{parameter, values:[DocumentValue]}]}`
+runs a `calc def … :> DocumentQueries::Query` and answers typed rows (`columns`, `rows[]
+{cells[] {values[] DocumentValue}}`; a `DocumentValue` is an `elementId`, `stringValue`,
+`intValue`, `realValue`, `boolValue`, `quantity`, `verdict`, `object`, `state` or `event`).
+`not_found` means the model declares no such query, `invalid_argument` that the name is not a
+query, and a query the model cannot answer is `failed_precondition` with the outcome lines in
+the message and a `QueryOutcome` error detail (`kind` `pathError`|`modelError`, `step`,
+`failures[] {step, expected, frontier {at, members, features, kinds, nearest}}`,
+`findings[] {step, element, constraint, observed}`, `path_failures[]`) — the record the CLI
+writes as `checks[].outcome`. `RenderDocument` attaches the same detail when a section's query
+fails. No 0.12.0 client library decodes the detail; read the message, or run the CLI with
+`-json` for the structured record. `Query` (the API & Services Query resource) takes all seven
+primitive operators (`=`, `<`, `>`, `<=`, `>=`, `in`, `instanceOf`) and `orderBy`
+(`query_order_by`). Writing queries: `opensysml-qvts`.
+
+## The post-0.10.1 surface, by request
 
 | RPC / field | Capability | What it does |
 |---|---|---|
@@ -130,7 +163,12 @@ Most calls after `ParseFile` take the returned `modelHash`, e.g.
   `big_int_values`, `rational_values`, `parse_sources`, `check`, `runs`. Check for the name
   before using an optional method or reading an optional response field; older services
   omit both (a v0.10.1 service answers HTTP 404 `page not found` to `/sysml.SysMLService/CheckBehavior`). The official
-  clients raise `MissingCapabilityError` for you.
+  clients raise `MissingCapabilityError` for you. `ApplyEdits` needs `edit_documents`: it
+  answers the edited `documents`, the pre-0.12.0 `EditResult.Content` is gone.
+- **Composite constraints** in `Query` with a single member are refused (`invalid_argument`);
+  write the member alone. `VerifyConstraint`/`VerifyRequirement`/`RunAnalysis` without a
+  subject run against the objects the service holds for the model; exceeding
+  `OPENSYSML_GRPC_MAX_HELD_OBJECTS` is `resource_exhausted`.
 - **JSON follows proto3 rules.** 64-bit integers (`runs`, `seed`, `instanceId`) are JSON
   *strings*; absent fields mean default values; enums are names. Use protobuf for large
   responses (instance trees, Turtle conversions) — JSON is for debugging and `curl`.
@@ -156,10 +194,17 @@ Most calls after `ParseFile` take the returned `modelHash`, e.g.
   matching build (`opensysml-install`).
 - HTTP 404 `page not found` from curl on `CheckBehavior`, `RunRuns`, `SelfCheck`, `RecordRun`,
   `ImportData` or `CompareResults`, or `MissingCapabilityError` from a client: the service is
-  v0.10.1 or older; use a nightly build. The nightly *fields* on existing procedures
-  (`disableLint`, `advance`, `toolDryRun`, `probe`, `show`, `depth`, …) are not refused by an
-  older service over JSON — they are silently ignored, so check the capability list, not the
-  status code.
+  v0.10.1 or older; upgrade. Newer *fields* on existing procedures (`disableLint`, `advance`,
+  `toolDryRun`, `probe`, `show`, `depth`, `form: "asciidoc"`, `orderBy`, …) are not refused
+  by an older service over JSON — they are silently ignored, so check the capability list,
+  not the status code.
+- `unauthenticated` / `AuthenticationError`: the service has a token and the call carried
+  none or another; pass the client's `token` option. `sysml-grpc` exits at startup with
+  `refusing to serve … without a token` when `-host` names a non-loopback address and no
+  token (or `-allow-unauthenticated`) was given, and refuses a token over plaintext without
+  `-allow-insecure-token-transport`.
+- A container needs `-host 0.0.0.0` (the default loopback is unreachable from outside) and
+  therefore a token; mount it and point `-token-file` at it.
 - Verification calls hang or exit with `resource_exhausted`: raise/lower the
   `OPENSYSML_MAX_*` budgets in the *service's* environment, not the client's.
 - SMT-backed calls report no solver: `OPENSYSML_SMT` must be set where `sysml-grpc` runs.

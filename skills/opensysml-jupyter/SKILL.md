@@ -40,7 +40,12 @@ The kernelspec names the binary's absolute path, `display_name` `SysML v2 (OpenS
 `language` `sysml` and `interrupt_mode` `message` (interrupts go over the control channel,
 so Windows is interrupted the same way). Exit statuses: `0` normal shutdown, `1` a channel
 could not be bound, `2` a command-line or connection-file error. Verified with
-`sysml-jupyter-kernel` from `sysml v0.10.1-1266-gdada45c11`.
+`sysml-jupyter-kernel` from the 0.12.0 release build (`v0.11.0-1980-g72c5b132f`, built from
+`release/0.12.0`). A `= …` result shows the values a result holds in its effective
+multiplicity (`[4]` for a calc returning `[0..*]`, `4` for `2 + 2`); `%run-query NAME` prints a
+QVTS query's rows or its `path error at …` lines (`opensysml-qvts`); a root namespace no cell
+declares is looked for under the notebook's directory (`%workspace`). In VS Code, `sysml-lsp`
+serves the notebook's cells (diagnostics, completion, hover) beside the kernel (`opensysml-lsp`).
 
 ## Cells
 
@@ -87,7 +92,7 @@ it can: `%viz` and Mermaid renders as `text/vnd.mermaid` (plus `text/vnd.graphvi
 `%render-document NAME ... html` as `text/html` (the HTML fragment). Other image forms
 (`plantuml`, `d2`) need the matching tool installed (`opensysml-documents`); `%render VIEW
 drawio` prints the diagrams.net file as text, the kernel having no MIME type for it, to save
-and open in draw.io (nightly builds and the release after v0.11.0).
+and open in draw.io.
 `%explain-code <code>` explains a diagnostic's code in a cell (`opensysml-repl`).
 
 ## Reusing notebooks and files

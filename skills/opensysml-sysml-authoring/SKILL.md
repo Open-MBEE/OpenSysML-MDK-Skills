@@ -12,7 +12,7 @@ metadata:
 OpenSysML implements the OMG SysML v2 / KerML textual notation. Validate every edit
 with `sysml -validate FILE` (exit `0` clean, `2` errors; see `opensysml-cli`) and read the
 first diagnostic first. Every diagnostic carries a stable kebab-case code
-(`error[unresolved]: …`; nightly builds and the release after 0.10.1), and
+(`error[unresolved]: …`), and
 `sysml -explain <code>` (REPL `%explain-code <code>`) prints what it means, how to resolve it
 and the specification clause behind it. `sysml -validate -strict` additionally rejects notation the OMG
 grammars do not admit; use it when the file must also load in other tools. This skill is
@@ -52,7 +52,12 @@ sysml -constraint Vehicles::Car::massLimit vehicle.sysml   # ✓ Constraint Vehi
 sysml -satisfy vehicle.sysml      # ✓ satisfy massReq by myCar holds (on Vehicles::myCar ID: 1)
 ```
 
-Verified with `sysml v0.10.1-1266-gdada45c11`.
+Verified with the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`). 0.12.0 warns `kerml-notation` on `typed by` in a `.sysml` file (write `:` or
+`defined by`; an error under `-strict`) and `library-declared-twice` when two files declare one
+`library package`. A `rep language "markdown"` (or `"asciidoc"`) body in a `Document` is parsed as
+markup (`opensysml-documents`); a `calc def … :> DocumentQueries::Query` body is a QVTS query
+(`opensysml-qvts`); a `Document` written in a `.kpar`/`.project.json` project resolves its
+dependencies from `lib/` (`opensysml-convert-rdf`).
 
 ## Rules the checker enforces that trip generated models
 

@@ -35,8 +35,7 @@ sysml -engines            # table: name, kind, protocol, authority, answers, sta
 sysml -engines -probe     # also start each external engine, compare its `describe` to the manifest
 ```
 
-Verified with `sysml v0.10.1-1266-gdada45c11`; a `tool:` engine's manifest details follow
-the table (`tool:fmi: tool`).
+Verified with the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`); a `tool:` engine's manifest details follow the table (`tool:fmi: tool`).
 
 ```text
 engine    kind      protocol  authority  answers                     status
@@ -58,8 +57,11 @@ tool:fmi  tool      fmi/1     observed   compute                     unavailable
 - `smt` / `solve` — Z3/cvc5-backed proof of constraints/requirements and satisfiability
   (`-check-input`, `-check-assume`, `-check-unroll`); *proved*, or *not covered* on
   `unknown`. Status shows the solver found (`OPENSYSML_SMT=/path/to/z3`, `opensysml-install`).
+  A derived declared value (`attribute volume : VolumeValue = height * width * length;`) is
+  asserted as the defining equation of its variable, so solving over `height` moves `volume`;
+  a requirement is encoded as `allTrue(assumptions) implies allTrue(constraints)`.
 - `sweep` — `-sweep 'x=1..10:1' -samples N -seed S -draws <policy>` tables; *observed*.
-  `-runs N -seed S -observe x` (nightly builds and the release after 0.10.1) repeats one
+  `-runs N -seed S -observe x` repeats one
   action or a `Simulation::MonteCarlo` analysis and distributes each observable
   (`standing: table (observed: N rows)`); `-clock-step S` fixes the clock's step.
 - `tool:fmi` — evaluates a `calc def` imported from an FMU through `OPENSYSML_FMI_RUNNER`
@@ -69,8 +71,8 @@ tool:fmi  tool      fmi/1     observed   compute                     unavailable
   action was reached; nothing to preview` when the call names none.
 
 The REPL equivalents are `%engines`, `%engines probe` and `%engine <name>`; the service
-exposes `ListEngines` and an `engine` field on verification requests, and (nightly) takes
-the run options too — `advance`, `seed`, `draws`, `clock_step` on execution requests,
+exposes `ListEngines` and an `engine` field on verification requests, and takes the run
+options too — `advance`, `seed`, `draws`, `clock_step` on execution requests,
 `tool_dry_run` on `RunAnalysis`, `RunRuns` for `-runs`; clients pass `engine=` /
 `WithEngine(...)` (`opensysml-service`, library skills).
 

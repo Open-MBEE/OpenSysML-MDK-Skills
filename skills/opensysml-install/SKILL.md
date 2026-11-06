@@ -17,14 +17,16 @@ OpenSysML ships five executables from one release:
 | `sysml-lsp` | Language Server Protocol server for editors | the same bundle |
 | `sysml-grpc` | Service process the Python/Node/Java/Rust/Julia/MATLAB clients talk to | bare `sysml-grpc-<os>-<arch>` binary + `.sha256` (from v0.9.0) |
 | `sysml-jupyter-kernel` | Jupyter kernel backed by the REPL | bare `sysml-jupyter-kernel-<os>-<arch>` binary + `.sha256` (from v0.10.0) |
-| `sysml-mcp` | Model Context Protocol server for coding agents | its own `sysml-mcp-<os>-<arch>.tar.gz`/`.zip` with its manual page (the release after 0.10.1, and nightlies built from a `develop` commit that carries it) |
+| `sysml-mcp` | Model Context Protocol server for coding agents | its own `sysml-mcp-<os>-<arch>.tar.gz`/`.zip` with its manual page (from v0.12.0; also `npx -y @openmbee/sysml-mcp`, Node ≥ 22.22.2) |
 
 Releases live at https://github.com/Open-MBEE/OpenSysML/releases. The tag `nightly` is a
 rolling snapshot of `develop` (published as `nightly-<yyyymmdd>-<commit>`, kept 14 days);
-`latest` is the newest tagged release, v0.10.1 at the time of writing. Each release carries a
-`SHA256SUMS.txt` manifest covering every archive and bare binary, and the install paths below
-verify downloads against it. Verified with `install.sh --help` and `make build` of a `develop`
-build (`sysml v0.10.1-1266-gdada45c11`).
+`latest` is the newest tagged release — v0.12.0 once it is tagged (this skill was written
+against the `release/0.12.0` branch; v0.11.0 before it). Each release carries a `SHA256SUMS.txt`
+manifest covering every archive and bare binary, and the install paths below verify downloads
+against it; from 0.12.0 each asset also has an SPDX SBOM beside it (`<asset>.spdx.json`), and
+the Python package is published through PyPI trusted publishing. Verified with `install.sh
+--help` and `make build` of the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`).
 
 ## Pick a route
 
@@ -37,7 +39,7 @@ build (`sysml v0.10.1-1266-gdada45c11`).
    edits a shell profile; add the directory to `PATH` if told to. Needs `curl` or `wget`;
    `sha256sum`, `shasum` or `openssl`; `tar` only when an archive is fetched. Options go after
    `sh -s --` (environment variable equivalents in parentheses):
-   - `--version v0.10.1 | latest | nightly` (`OPENSYSML_VERSION`); `0.10.1` is accepted and
+   - `--version v0.12.0 | latest | nightly` (`OPENSYSML_VERSION`); `0.12.0` is accepted and
      prefixed with `v`
    - `--tools sysml,sysml-lsp,sysml-grpc,sysml-jupyter-kernel,sysml-mcp | all`
      (`OPENSYSML_TOOLS`); default `sysml,sysml-lsp`
@@ -55,9 +57,10 @@ build (`sysml v0.10.1-1266-gdada45c11`).
    asked for, so `--tools sysml-grpc` alone downloads just that binary. `all` stands alone and
    is resolved against the chosen release's `SHA256SUMS.txt`: it installs every tool that
    release published for the platform and says which it lacks
-   (`--tools all: v0.10.1 publishes no sysml-mcp for linux-amd64`, then installs the other four),
+   (`--tools all: v0.11.0 publishes no sysml-mcp for linux-amd64`, then installs the other four;
+   from v0.12.0 all five are published),
    whereas a tool named explicitly on a release that lacks it fails
-   (`SHA256SUMS.txt of v0.10.1 does not list sysml-mcp-linux-amd64.tar.gz; … sysml-grpc is
+   (`SHA256SUMS.txt of v0.11.0 does not list sysml-mcp-linux-amd64.tar.gz; … sysml-grpc is
    published from v0.9.0 and sysml-jupyter-kernel from v0.10.0, and sysml-mcp has its own
    archive only from the release that introduced it`). An unknown tool name fails before
    anything is downloaded.
@@ -65,14 +68,14 @@ build (`sysml v0.10.1-1266-gdada45c11`).
    # just the language server, nightly, into ~/bin
    curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools sysml-lsp --bin-dir ~/bin --version nightly
    # everything the release publishes, pinned, with the manifest signature checked
-   curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools all --version v0.10.1 --verify-signature
+   curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools all --version v0.12.0 --verify-signature
    # the MCP server beside the defaults, from a release that publishes it
    curl -fsSL https://opensysml.org/install.sh | sh -s -- --tools sysml,sysml-lsp,sysml-mcp
    ```
    Windows (PowerShell 5.1+, no admin): `irm https://opensysml.org/install.ps1 | iex`, with
    `-Version`, `-Tools` (same list and `all` semantics), `-InstallDir`
    (`OPENSYSML_INSTALL_DIR`), `-BaseUrl`, `-Os`/`-Arch`, `-NoPath`, `-DryRun` parameters
-   (`& ([scriptblock]::Create((irm https://opensysml.org/install.ps1))) -Tools sysml -Version v0.10.1`).
+   (`& ([scriptblock]::Create((irm https://opensysml.org/install.ps1))) -Tools sysml -Version v0.12.0`).
    Installs to `%LOCALAPPDATA%\Programs\OpenSysML` and adds it to the user PATH; prefers the
    SignPath-signed `opensysml-windows-amd64-signed.zip` when the release carries it and checks
    every executable's Authenticode signature. The zip has no solver.
@@ -90,16 +93,16 @@ build (`sysml v0.10.1-1266-gdada45c11`).
    winget manifests are maintained under `packaging/` of the repository (the Scoop manifest
    also installs `sysml-mcp`; the winget one carries the bundle only).
 
-4. **Go toolchain (Go 1.25+).** Builds from source, so no checksum manifest applies.
+4. **Go toolchain (Go 1.26+; the module says `go 1.26`, releases are built with go1.27.3).** Builds from source, so no checksum manifest applies.
    ```bash
    go install github.com/Open-MBEE/OpenSysML/cmd/sysml@latest
    go install github.com/Open-MBEE/OpenSysML/cmd/sysml-lsp@latest
    go install github.com/Open-MBEE/OpenSysML/cmd/sysml-grpc@latest
-   go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@develop   # @latest only once a release after 0.10.1 carries cmd/sysml-mcp
+   go install github.com/Open-MBEE/OpenSysML/cmd/sysml-mcp@latest    # cmd/sysml-mcp is in the module from v0.12.0
    ```
-   `@latest` is the newest tagged module (v0.10.1); a command that tag lacks fails with `does
-   not contain package …`. `@develop` builds the `develop` head as a pseudo-version
-   (`v0.10.2-0.<date>-<commit>`); `@<commit>` pins one.
+   `@latest` is the newest tagged module; a command that tag lacks fails with `does
+   not contain package …` (so `sysml-mcp@latest` needs v0.12.0 or newer). `@develop` builds
+   the `develop` head as a pseudo-version (`v0.12.1-0.<date>-<commit>`); `@<commit>` pins one.
 
 5. **From a checkout.**
    ```bash
@@ -113,7 +116,7 @@ build (`sysml v0.10.1-1266-gdada45c11`).
    `go build -o bin/<name> ./cmd/<name>`.
 
 Confirm with `sysml -version` (prints version, commit, build time, Go version; a checkout
-build prints `v0.10.1-<n>-g<commit>`) and `sysml -man` for the manual page. Each binary has
+build prints `v0.11.0-<n>-g<commit>` until the 0.12.0 tag exists) and `sysml -man` for the manual page. Each binary has
 `-version` and `-man`.
 
 ## Binaries the language clients download for themselves

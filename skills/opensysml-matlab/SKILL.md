@@ -45,12 +45,24 @@ conn = opensysml.private('binary', '/path/to/sysml-grpc', 'timeout', 30);   % ex
 - `opensysml.capabilities(conn)` reports what the service advertises; `opensysml.lastError()`
   returns the last service error struct.
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the package at
-`client/matlab` of the same checkout. Anything marked *nightly* is a function of the package as
-well as an RPC of the service: `addpath` the `client/matlab` of a `develop` checkout (a `v0.10.1`
-checkout has no `opensysml.checkAction`) and run a service newer than v0.10.1 (nightly builds and
-the release after 0.10.1); a nightly package against a v0.10.1 service raises
+Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`) with the package at `client/matlab` of the same checkout. Anything marked
+*nightly* arrived after 0.10.1 and is in the 0.12.0 package: `addpath` the `client/matlab` of a
+checkout of the `v0.12.0` tag or newer (a `v0.10.1` checkout has no `opensysml.checkAction`) and
+run a service of the same release; a newer package against an older service raises
 `opensysml:missingCapability`.
+
+**0.12.0 in this client.** A service that requires a bearer token takes it as the connection's `'token'` option (a call
+without it fails `unauthenticated`); `convert` takes `compact`, `omit_derived`/`keep_derived`,
+`include_check_diagnostics`, `id_form` and `include_library_stubs` in the client's spelling
+(capabilities `convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`);
+`render_document` takes the `asciidoc` form (`render_document_asciidoc`); an action run carries
+its trace (`action_trace`); a verdict carries its notes (`verdict_notes`). QVTS: the document-query
+call `opensysml.runDocumentQuery` runs a `calc def … :> DocumentQueries::Query` and answers typed rows, but no 0.12.0
+client decodes the `QueryOutcome` error detail — a query the model cannot answer is the service's
+`failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
+…, which has no such feature`); run `sysml -run-query … -json` for the structured record
+(`opensysml-qvts`).
+
 
 ## Parsing and models
 

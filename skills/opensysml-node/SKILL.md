@@ -10,7 +10,7 @@ metadata:
 # OpenSysML from TypeScript / JavaScript
 
 ```bash
-npm install @openmbee/opensysml                   # Node 20+; ESM, typed
+npm install @openmbee/opensysml                   # Node 22.22.2+ (Node 20 dropped in 0.12.0); ESM, typed
 npm install @openmbee/opensysml-wasm@<same version>   # optional: in-process WASM (opensysml-wasm)
 ```
 
@@ -33,10 +33,23 @@ try {
 `{ strictConformance: true }` (its alias `strict` is deprecated; passing both with different
 values is refused) and `language: "kerml"`.
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client at
-`client/node` of the same checkout (`@openmbee/opensysml@0.10.1`; `npm run build && npm test`
-green). Anything marked *nightly* is a method of the client as well as an RPC of the service:
-`@openmbee/opensysml@0.10.1` has no `checkAction`. Install `npm install @openmbee/opensysml@nightly`
+
+**0.12.0 in this client.** A service that requires a bearer token takes it as the connection's `token` option (a call
+without it fails `unauthenticated`); `convert` takes `compact`, `omit_derived`/`keep_derived`,
+`include_check_diagnostics`, `id_form` and `include_library_stubs` in the client's spelling
+(capabilities `convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`);
+`render_document` takes the `asciidoc` form (`render_document_asciidoc`); an action run carries
+its trace (`action_trace`); a verdict carries its notes (`verdict_notes`). QVTS: the document-query
+call `runDocumentQuery(id, bindings)` runs a `calc def … :> DocumentQueries::Query` and answers typed rows, but no 0.12.0
+client decodes the `QueryOutcome` error detail — a query the model cannot answer is the service's
+`failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
+…, which has no such feature`); run `sysml -run-query … -json` for the structured record
+(`opensysml-qvts`).
+
+Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`) with the client at `client/node` of the same checkout (`npm run build &&
+npm test` green). Anything marked *nightly* arrived after 0.10.1 and is in
+`@openmbee/opensysml@0.12.0`; `@openmbee/opensysml@0.10.1` has no `checkAction`. For an
+unreleased commit install `npm install @openmbee/opensysml@nightly`
 (the `nightly` dist-tag, `<next>-nightly.<yyyymmdd>.g<commit>`; `latest` stays the release) — its
 platform packages carry the same night's `sysml-grpc` — or depend on `client/node` of a `develop`
 checkout after `npm run build`. A nightly client against a v0.10.1 service throws

@@ -13,9 +13,7 @@ OpenSysML renders two kinds of thing declared *in the model*: **views** (`view d
 `view` with a `render` member — interconnection, tree, state, action, requirement, table
 views) and **documents** (`document def`s whose sections run model queries and embed
 views). Nothing is drawn by hand; change the model, re-render. Verified with
-`sysml v0.10.1-1266-gdada45c11`; `-render-show`, `-render-depth`, `-render-lines`, the
-`svg`/`svg-animated` run forms, the `-html-*` options and the empty-rendering notice are in
-nightly builds and the release after 0.10.1.
+the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`).
 
 ```bash
 sysml -list all model.sysml                 # documents, views, diagrams, pseudo-views by name
@@ -46,7 +44,7 @@ sysml -graphs Pkg::Rover::Drive -o drive.json model.sysml    # lowered action/st
   terminal and the kind's machine form (Mermaid for a diagram) to a file or pipe — the `-o`
   extension does not choose the form (`-o view.drawio` alone writes Mermaid; say `-render-form
   drawio`) — and `-render-all` writes each kind's machine form.
-- `drawio` (`sysml v0.11.0-1195-g14e53c052`; in nightly builds and the release after v0.11.0) writes an uncompressed
+- `drawio` writes an uncompressed
   diagrams.net (draw.io) file that draw.io desktop, diagrams.net and the VS Code draw.io
   extension open and edit as it is: `<mxfile host="OpenSysML" compressed="false">`, one
   `<diagram>` named for the view, every node, port and edge an `<object>` carrying the
@@ -76,7 +74,10 @@ sysml -graphs Pkg::Rover::Drive -o drive.json model.sysml    # lowered action/st
   `qualifiers` or `all` (port symbols, compartments and keywords are on by default; a wrong
   name is refused with the list). `-render-depth N` stops at N nesting levels and marks the
   rest `nested deeper than N level; not shown`; `-render-lines splines|ortho|polyline`
-  routes edges (DOT `splines=ortho`).
+  routes edges (`ortho` through the libavoid router in a native build). Relationship edges
+  carry the graphical notation's glyphs (specialization, redefinition, subsetting, typing,
+  membership), an inherited member is marked `^`, and a calculation's or action's directed
+  parameters draw as pins rather than attributes.
 - `-render-style pilot|cameo` draws like the OMG Pilot visualizer by default;
   `-render-palette` picks node colours by keyword family (`okabe-ito`, `tol-bright`,
   `tol-muted`, `tol-light`, `brewer-set2`, `brewer-dark2`, `viridis`, `cividis`);
@@ -101,16 +102,26 @@ sysml -render-document Pkg::SystemReport -o report.md model.sysml          # Mar
 sysml -render-document Pkg::SystemReport -doc-form html -doc-toc -doc-number-sections -o report.html model.sysml
 sysml -render-document Pkg::SystemReport -doc-form html -html-theme nasa -html-mermaid cdn -html-math cdn -o report.html model.sysml
 sysml -render-document Pkg::SystemReport -doc-form html -html-fragment -o fragment.html model.sysml   # the <article> alone, for a host page
+sysml -render-document Pkg::SystemReport -doc-form asciidoc -o report.adoc model.sysml                # AsciiDoc, for Antora/Asciidoctor pipelines
 sysml -render-document Pkg::SystemReport -doc-form pdf -pdf-engine weasyprint -doc-title-page -doc-number-figures -o report.pdf model.sysml
 sysml -render-document Pkg::SystemReport -diagram-form plantuml -o report.md model.sysml   # diagrams as PlantUML instead of Mermaid
 sysml -render-documents site/ -doc-form html model.sysml                   # every document, cross-linked; exit 3 if some failed
 ```
 
-- `-doc-form markdown|html|pdf`; `-diagram-form mermaid|dot|plantuml|d2` chooses the
+- `-doc-form markdown|asciidoc|html|pdf`; `-diagram-form mermaid|dot|plantuml|d2` chooses the
   diagram source embedded; `-doc-title-page`, `-doc-toc`, `-doc-number-sections`,
   `-doc-number-figures` shape HTML and PDF only (asked of Markdown they are refused with
   `ask for one with -doc-form html or -doc-form pdf`; the `-pdf-title-page`, `-pdf-toc`,
-  `-pdf-number-sections` spellings are deprecated aliases).
+  `-pdf-number-sections` spellings were removed in 0.12.0). The service advertises
+  `render_document_asciidoc` for the AsciiDoc form.
+- Prose in the model: a `doc /* … */` is plain text; a KerML textual representation
+  `rep language "markdown" /* … */` or `rep language "asciidoc" /* … */` inside a
+  `Document`, `Section` or `part : Paragraph` is parsed as markup and expands into content
+  blocks in place — headings (`#`…, `==`…) open nested `Section`s, so one body can write a
+  whole outline. A `Paragraph`'s text may also be bound (`:>> text = "…"`). AsciiDoc bodies
+  need Asciidoctor.js (`OPENSYSML_ASCIIDOCTOR`, installed by the toolchain script);
+  without it the render reports `document-plan-markup-tool-missing` and keeps the body
+  literal; a construct the planner cannot place is `unsupported-markup-construct`.
 - HTML: `-html-theme default|acm|ieee|modern|nasa|print|report`, `-html-css FILE|URL` adds a
   stylesheet, `-html-no-default-css` drops the built-in one, `-html-default-css` prints it
   for copying, `-html-mermaid cdn|URL` and `-html-math cdn|URL` load the Mermaid and math
@@ -120,12 +131,15 @@ sysml -render-documents site/ -doc-form html model.sysml                   # eve
   `the weasyprint engine needs weasyprint, which was not found; install it ... and point
   OPENSYSML_WEASYPRINT at it, or select another engine with -pdf-engine` (exit `2`).
 
-A document's sections run document queries (`-query`-style selections, tables of
-elements, verdict tables of constraints and requirements) and embed views; `-render-document`
-compiles the definition, runs the queries against the model as loaded (so pass every file,
-and `-instantiate`/`-action` when a section reports on objects or runs) and writes one file.
-`-doc-form markdown` needs no external tools and is the right form for CI artifacts and
-agent consumption.
+A document's sections run QVTS document queries — a `Table`'s `calc rows : SomeQuery;`
+(a `calc def … :> DocumentQueries::Query`), verdict tables over `Verdicts(...)`, lists,
+definitions, formulas — and embed views; `-render-document` compiles the definition, runs
+the queries against the model as loaded (so pass every file, and `-instantiate`/`-action`
+when a section reports on objects or runs) and writes one file. A query the model cannot
+answer fails the document with the query's outcome lines (`path error at Feature(mass): …`,
+exit `2`; `-render-documents` exits `3` when other documents rendered) — writing queries,
+`tolerate = true` and reading outcomes are in `opensysml-qvts`. `-doc-form markdown` needs
+no external tools and is the right form for CI artifacts and agent consumption.
 
 ## External toolchain (HTML images and PDF)
 
@@ -138,6 +152,7 @@ agent consumption.
 | PlantUML | `plantuml.jar` + Java | `OPENSYSML_PLANTUML_JAR`, `OPENSYSML_JAVA` |
 | D2 | `d2` | `OPENSYSML_D2` |
 | Formulas | KaTeX | `OPENSYSML_KATEX`, `OPENSYSML_KATEX_CSS` |
+| `rep language "asciidoc"` bodies (any output form) | Asciidoctor.js | `OPENSYSML_ASCIIDOCTOR` |
 
 In an OpenSysML checkout `./scripts/download-doc-pdf-toolchain.sh` provisions pinned copies
 under `build/doc-pdf/`; export the variables it prints. A missing tool is reported as a
@@ -151,7 +166,9 @@ REPL: `%list`, `%documents`, `%views [diagrams] [kind...]`, `%view NAME`,
 `%render-document NAME [mermaid|dot|plantuml|d2 [pilot|cameo]]`, `%render-run`,
 `%run-query NAME [p=expr...]`, `%viz`. Clients: `render_view`/`renderView` and
 `render_document`/`renderDocument` return the text of the chosen form, `drawio` included (`opensysml-python`,
-`opensysml-node`, …); HTML needs the service to advertise `render_document_html`; the
+`opensysml-node`, …); HTML needs the service to advertise `render_document_html`, AsciiDoc
+`render_document_asciidoc`; a failed query inside `RenderDocument` carries a `QueryOutcome`
+error detail no 0.12.0 client decodes (its lines are in the error message); the
 `sysml-wasm` module serves `RenderView` too (`opensysml-wasm`). Jupyter shows Mermaid/HTML
 inline (`opensysml-jupyter`).
 

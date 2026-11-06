@@ -29,12 +29,25 @@ mvn -f client/java/pom.xml install   # installs org.openmbee:opensysml (+ source
 has a small dependency footprint (no gRPC-java runtime). The build needs Maven 3.9.6+
 (`protobuf-maven-plugin` refuses older ones).
 
-Verified against `sysml v0.10.1-1266-gdada45c11` (a `develop` build) with the client at
-`client/java` of the same checkout (`0.10.1`; `mvn -pl opensysml-client -am test` green with
-Maven 3.9.11). Anything marked *nightly* is a method of the client as well as an RPC of the
-service: an artifact built from the `v0.10.1` tag has no `checkAction` (compile error), and Maven
-Central gets no snapshot — build and `mvn install` from a `develop` checkout (the artifact keeps
-the `0.10.1` version string and replaces a release build in `~/.m2`). A nightly client against a
+Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`) with the client at `client/java` of the same checkout (`mvn -pl
+opensysml-client -am test` green with Maven 3.9.11). Anything marked *nightly* arrived after
+0.10.1 and is in the `0.12.0` artifact on Maven Central; an artifact built from the `v0.10.1` tag
+has no `checkAction` (compile error), and Maven Central gets no snapshot — for an unreleased
+commit build and `mvn install` from a `develop` checkout (the artifact keeps the last release's
+version string and replaces a release build in `~/.m2`). A newer client against a
+
+**0.12.0 in this client.** A service that requires a bearer token takes it as `ConnectionOptions.builder().token(…)` (a call
+without it fails `unauthenticated`); `convert` takes `compact`, `omit_derived`/`keep_derived`,
+`include_check_diagnostics`, `id_form` and `include_library_stubs` in the client's spelling
+(capabilities `convert_compact`, `convert_check_diagnostics`, `convert_library_stubs`);
+`render_document` takes the `asciidoc` form (`render_document_asciidoc`); an action run carries
+its trace (`action_trace`); a verdict carries its notes (`verdict_notes`). QVTS: the document-query
+call `runDocumentQuery` runs a `calc def … :> DocumentQueries::Query` and answers typed rows, but no 0.12.0
+client decodes the `QueryOutcome` error detail — a query the model cannot answer is the service's
+`failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
+…, which has no such feature`); run `sysml -run-query … -json` for the structured record
+(`opensysml-qvts`).
+
 v0.10.1 service throws `CapabilityException`.
 
 ```java
