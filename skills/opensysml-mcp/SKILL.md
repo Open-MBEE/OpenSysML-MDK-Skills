@@ -122,7 +122,8 @@ one-line summary, the RPC or `sysml` flag it stands for and whether it writes, i
 [references/tool-catalog.md](references/tool-catalog.md); it was generated from the server's own
 `tool_catalog` and `tools/list` answers (checked against the 0.12.0 build: the same 83 tools;
 `import_diagram` arrived in 0.11.0). QVTS: `run_document_query {modelHash | paths | sources,
-queryId, bindings}` answers a query's rows (`structuredContent.columns[].name`, `rows[].cells[]
+queryId, bindings}` — or `inlineQuery` in place of `queryId` to run the query body itself
+(capability `inline_document_query`, nightly builds and the release after v0.12.1) — answers a query's rows (`structuredContent.columns[].name`, `rows[].cells[]
 .values[]`, `modelHash`) and, when the model cannot answer it, `isError: true` with
 `FAILED_PRECONDITION: query X reads feature mass of …, which has no such feature` — the outcome
 lines, not the structured `QueryOutcome`; `query` runs an API & Services Query or OSLC text (`orderBy`

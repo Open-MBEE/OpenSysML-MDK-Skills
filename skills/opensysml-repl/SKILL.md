@@ -119,6 +119,7 @@ the set)`.
 %sweep rangeStudy() rover1 n=1..8:2   # one run per value; %samples N SEED name draws instead
 %runs 20 7 Race x clock               # run an action 20 times (seed 7; no seed under %draws min|max|average), table and distribute x and the clock
 %run-query Reports::Violated root=car # a QVTS/DocumentQueries query, rows and columns (opensysml-qvts)
+%run-query inline Project(WhereType(Descendants(Named("Pkg")), "PartUsage"), ("name", "mass"))   # the query body inline (reported as `Inline query`)
 %tool case|action(args) [object]      # run via an external tool (OPENSYSML_TOOLS)
 %import data.csv [map map.json] [format csv|tsv|json|jsonl] [dry-run]   # set feature values from a table
 %view NAME | %graphs NAME | %render NAME [form [palette] [style] [ports] [link=T] [depth=N]]
@@ -147,6 +148,10 @@ documents can need external tools; see `opensysml-documents`.
 - `%run-query` answers `query X names no element …` / `reads feature m of …, which has no
   such feature`: the query is wrong about the model (a path error), not the session — the
   `nearest:` hint names the spelling; `returned 0 rows` is a valid empty answer.
+- `%run-query inline <expression>` runs the body without a named query; the word `inline` is
+  only the inline form when what follows is an expression — `%run-query inline root=car`
+  (first argument shaped `<parameter>=<expression>`) runs a query actually named `inline`. A
+  fault in the text is positioned within it (`inline query 1:30: expected ')'`).
 - A `%send` is ignored: the signal type must be one a transition `accept`s and the state
   machine must have been started with `%state`; check `%current` and `%events`.
 - Infinite-looking `%action`: budgets (`%budget`, `OPENSYSML_MAX_ACTION_STEPS`) stop it and
