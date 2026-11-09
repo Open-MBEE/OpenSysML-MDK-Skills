@@ -118,7 +118,10 @@ Limits.) Other surfaces:
   name is not a query. A query that fails attaches a `QueryOutcome` error detail
   (`kind` `pathError`|`modelError`, `step`, `failures[] {step, expected, frontier {at,
   members, features, kinds, nearest}}`, `findings[] {step, element, constraint, observed}`,
-  `path_failures[]`); `RenderDocument` carries it too when a section's query fails.
+  `path_failures[]`); in nightly builds and the release after v0.12.1 each frontier list on
+  the wire holds at most eight names (nearest spellings first) with the whole count in
+  `membersTotal`/`featuresTotal`/`kindsTotal`, while `-json` and `%run-query` keep the whole
+  list; `RenderDocument` carries it too when a section's query fails.
   Capability `document_query` (`opensysml-service`).
 - **MCP**: `run_document_query` (runtime group; the RPC's bindings and rows) and `query`
   (API & Services Query with `orderBy`); `render_document`/`render_model_document` for
