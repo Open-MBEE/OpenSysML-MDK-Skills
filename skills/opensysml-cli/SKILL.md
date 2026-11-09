@@ -110,6 +110,7 @@ sysml -analysis 'Pkg::rangeStudy()' model.sysml # run an analysis or verificatio
 sysml -query 'oslc.where=rdf:type=sysml:PartUsage and sysml:owner{sysml:name="Car"}&oslc.select=sysml:name' model.sysml   # OSLC query
 sysml -run-query "Reports::Violated root=Pkg::car" model.sysml      # a QVTS/DocumentQueries query: rows and columns
 sysml -run-query Reports::Violated -json model.sysml                 # the rows as checks[].table, a failure as checks[].outcome
+sysml -run-inline-query 'Project(WhereType(Descendants(Named("Pkg")), "PartUsage"), ("name", "mass"))' model.sysml   # the query body inline, no calc def
 sysml -self-check model.sysml                   # the model's own SysMLValidation rules, reflectively
 sysml -metamodel-table                          # the pinned pilot metamodel as JSON (no model); -metaclass-graph writes it as Turtle
 ```
@@ -135,6 +136,13 @@ the model cannot answer exits `2` with `sysml: query X …` followed by QVTS out
 model-error finding (`names 2 elements …`, the model is ambiguous); a parameter left
 unbound is refused with `query X requires binding root`. Authoring, outcomes and the JSON
 records are in `opensysml-qvts`.
+
+`-run-inline-query EXPR` (nightly builds and the release after v0.12.1) runs the query body
+itself — one `DocumentQueries` expression, no `calc def` — through the same compiler and
+executor, with the same `✓`/outcome lines and `-json` record (the subject is the expression).
+It is repeatable and runs in order with `-run-query`; an inline text takes no bindings. A parse
+or plan fault is reported as `inline query <line>:<col>: …` with a caret into the text, exit 2, and is
+never a model diagnostic.
 
 `-query` takes OSLC Query 3.0 text (`oslc.where=…&oslc.select=…&oslc.orderBy=…`, or bare
 `oslc.where` terms) and prints one line per element — `Garage::Car::wheels  PartUsage
