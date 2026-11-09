@@ -107,7 +107,7 @@ sysml -requirement Pkg::massReq model.sysml     # check a requirement usage (nee
 sysml -satisfy=Pkg::massReq model.sysml         # one `satisfy ... by ...` assertion; bare -satisfy checks all
 sysml -calc 'Pkg::Range(50.0)' model.sysml      # invoke a calculation with arguments
 sysml -analysis 'Pkg::rangeStudy()' model.sysml # run an analysis or verification case
-sysml -query 'oslc.where=sysml:type="PartDefinition"' model.sysml   # OSLC query
+sysml -query 'oslc.where=rdf:type=sysml:PartUsage and sysml:owner{sysml:name="Car"}&oslc.select=sysml:name' model.sysml   # OSLC query
 sysml -run-query "Reports::Violated root=Pkg::car" model.sysml      # a QVTS/DocumentQueries query: rows and columns
 sysml -run-query Reports::Violated -json model.sysml                 # the rows as checks[].table, a failure as checks[].outcome
 sysml -self-check model.sysml                   # the model's own SysMLValidation rules, reflectively
@@ -135,6 +135,23 @@ the model cannot answer exits `2` with `sysml: query X …` followed by QVTS out
 model-error finding (`names 2 elements …`, the model is ambiguous); a parameter left
 unbound is refused with `query X requires binding root`. Authoring, outcomes and the JSON
 records are in `opensysml-qvts`.
+
+`-query` takes OSLC Query 3.0 text (`oslc.where=…&oslc.select=…&oslc.orderBy=…`, or bare
+`oslc.where` terms) and prints one line per element — `Garage::Car::wheels  PartUsage
+sysml:name=wheels  sysml:owner{sysml:qualifiedName}=Garage::Car` — in the query's own spelling;
+it runs alone (not with checks, `-eval`, `-instantiate`, `-render*`, `-json`, `-output`). In
+nightly builds and the release after v0.12.1 it is compiled to a document-query plan and run by the
+QVTS evaluator (`docs/reference/oslc-query.md`): `rdf:type=sysml:<Metaclass>` selects declared
+elements; `sysml:<property>` is any property the metamodel declares, read reflectively and compared
+typed; `sysx:multiplicityLower`/`sysx:multiplicityUpper` are the evaluator's own (`*` is infinity;
+`sysml:multiplicityUpper` is refused naming the `sysx:` spelling); scoped terms
+(`sysml:owner{sysml:name="Car"}`), nested selection, `oslc.select=*`, `oslc.searchTerms="WHEEL"`
+and `oslc.orderBy=-sysx:multiplicityUpper,+sysml:name` are supported. An unknown property exits
+`2` before any element is read — `sysml: unknown OSLC query property "sysml:nmae" — did you mean
+sysml:name?` — and OSLC `or` is refused: `sysml: OSLC Query has no "or": compound terms are joined
+by " and "; ask a separate query for each alternative`. The held objects of a run are reached from
+the REPL's `%query` (`rdf:type=elmt:<id>`, `opensysml-repl`), since `-query` does not combine with
+`-instantiate`.
 
 `-json` (or `-format json`) emits a single object for scripting; pair it with a check:
 

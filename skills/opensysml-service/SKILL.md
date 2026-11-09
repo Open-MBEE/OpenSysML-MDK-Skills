@@ -138,6 +138,26 @@ fails. No 0.12.0 client library decodes the detail; read the message, or run the
 primitive operators (`=`, `<`, `>`, `<=`, `>=`, `in`, `instanceOf`) and `orderBy`
 (`query_order_by`). Writing queries: `opensysml-qvts`.
 
+In nightly builds and the release after v0.12.1, `Query {modelHash, query | oslcQuery}` is a
+*translator* into the same document-query plans: both the structured `Query` and OSLC text
+compile to `WhereType`/`WhereName`/`WhereFeature`/`Project`/`OrderBy`/`WhereText` and run through
+the QVTS evaluator, so values compare typed (numbers numerically, `*` as infinity on
+`multiplicityLower`/`multiplicityUpper`), any property the metamodel declares for a metaclass is
+queryable by its KerML/SysML name (reflectively, not from a fixed table), properties nest by `.`
+(`owner.qualifiedName`, `senderArgument.referent.name`) and a property no metaclass declares is
+`invalid_argument` naming the nearest spelling *with the `QueryOutcome` detail attached* — never a
+silently empty answer. `@type` `in` `["<urn:sysmlv2:element:Garage__Wheel>"]` (an element IRI, the
+RDF export's `elmt:` form of the qualified name; the angle brackets are optional) selects the
+*held objects* `Instantiate` created for that model whose definition is that element, each
+answered under `QueryResultElement.path` (`Garage::car.wheels[2]`, additive; `id`/`type` stay
+the declaring usage); a metaclass `@type` keeps selecting declared elements. OSLC text additionally
+accepts scoped terms (`sysml:owner{sysml:name="Car"}`), nested `oslc.select`
+(`sysml:owner{sysml:qualifiedName}`), `oslc.select=*`, `oslc.searchTerms` and `oslc.orderBy=+a,-b`,
+with `sysx:` (`urn:opensysml:sysml:`) for the evaluator-derived `sysx:multiplicityLower`/`Upper`
+and an object's own features (`sysx:pressure`); OSLC `or` stays refused (`OSLC Query has no "or"`),
+as is a bare `*` value anywhere but the multiplicity bounds. Details: `docs/reference/oslc-query.md`,
+`docs/reference/api.md`.
+
 ## The post-0.10.1 surface, by request
 
 | RPC / field | Capability | What it does |
@@ -165,8 +185,9 @@ primitive operators (`=`, `<`, `>`, `<=`, `>=`, `in`, `instanceOf`) and `orderBy
   omit both (a v0.10.1 service answers HTTP 404 `page not found` to `/sysml.SysMLService/CheckBehavior`). The official
   clients raise `MissingCapabilityError` for you. `ApplyEdits` needs `edit_documents`: it
   answers the edited `documents`, the pre-0.12.0 `EditResult.Content` is gone.
-- **Composite constraints** in `Query` with a single member are refused (`invalid_argument`);
-  write the member alone. `VerifyConstraint`/`VerifyRequirement`/`RunAnalysis` without a
+- **Composite constraints** in `Query` with a single member are refused (`invalid_argument`:
+  `CompositeConstraint combines at least two constraints, got one`); write the member alone. An
+  `instanceOf`/`in` on `@type` mixing an element IRI with a metaclass name is refused too. `VerifyConstraint`/`VerifyRequirement`/`RunAnalysis` without a
   subject run against the objects the service holds for the model; exceeding
   `OPENSYSML_GRPC_MAX_HELD_OBJECTS` is `resource_exhausted`.
 - **JSON follows proto3 rules.** 64-bit integers (`runs`, `seed`, `instanceId`) are JSON
