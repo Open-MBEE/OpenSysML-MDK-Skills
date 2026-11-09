@@ -62,6 +62,7 @@ client decodes the `QueryOutcome` error detail — a query the model cannot answ
 `failed_precondition` error whose message holds the outcome lines (`query X reads feature mass of
 …, which has no such feature`); run `sysml -run-query … -json` for the structured record
 (`opensysml-qvts`).
+In nightly builds and the release after v0.12.1, `opensysml.query(model, 'oslc text')` / `opensysml.query(model, 'where', …)` compiles the structured `Query` or OSLC text into the same document-query plans the QVTS evaluator runs: values compare typed, every property the metamodel declares is queryable by name and nests by `.` (`owner.qualifiedName`), an unknown property is the service's `invalid_argument` carrying the `QueryOutcome` detail (read the message; the client does not decode it), and `@type` naming an element IRI (`<urn:sysmlv2:element:Garage__Wheel>`, OSLC `rdf:type=elmt:Garage__Wheel`) selects the held objects of that element, each answered as its declaring usage (the wire's additive `QueryResultElement.path` is not surfaced by this client yet). OSLC `or` stays refused (`OSLC Query has no "or"`); scoped terms, nested `oslc.select`, `oslc.select=*`, `oslc.searchTerms` and `sysx:multiplicityLower`/`sysx:multiplicityUpper` are accepted (`docs/reference/oslc-query.md`).
 
 
 ## Parsing and models

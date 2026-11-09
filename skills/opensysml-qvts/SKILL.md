@@ -123,6 +123,14 @@ Limits.) Other surfaces:
 - **MCP**: `run_document_query` (runtime group; the RPC's bindings and rows) and `query`
   (API & Services Query with `orderBy`); `render_document`/`render_model_document` for
   documents (`opensysml-mcp`).
+- **OSLC text and the API `Query`** (`sysml -query`, `%query`, the `Query` RPC, the MCP
+  `query` tool, every client's `query`): in nightly builds and the release after v0.12.1 these
+  are translators into the same plans — `rdf:type`/`@type` → `WhereType`, `sysml:name` →
+  `WhereName`, any other metamodel property → `WhereFeature(tolerate)`, `oslc.select` →
+  `Project`, `oslc.orderBy` → `OrderBy`, `oslc.searchTerms` → `WhereText`, `rdf:type=elmt:<id>`
+  → `Objects` over the held objects — run by this evaluator, so they share its typed comparison,
+  reflective properties and `QueryOutcome` failures (`docs/reference/oslc-query.md`,
+  `opensysml-cli`, `opensysml-service`).
 - **Clients**: every language client runs a query (`model.run_document_query(query_id,
   bindings)` in Python, `runDocumentQuery` in Node/Java, `RunDocumentQuery` in Go,
   `run_document_query` in Rust/Julia/MATLAB) and answers typed rows, but in 0.12.0 **none

@@ -125,8 +125,11 @@ one-line summary, the RPC or `sysml` flag it stands for and whether it writes, i
 queryId, bindings}` answers a query's rows (`structuredContent.columns[].name`, `rows[].cells[]
 .values[]`, `modelHash`) and, when the model cannot answer it, `isError: true` with
 `FAILED_PRECONDITION: query X reads feature mass of …, which has no such feature` — the outcome
-lines, not the structured `QueryOutcome`; `query` runs an API & Services Query (`orderBy`
-supported); `render_document`/`render_model_document` render query-backed documents
+lines, not the structured `QueryOutcome`; `query` runs an API & Services Query or OSLC text (`orderBy`
+supported; in nightly builds and the release after v0.12.1 both compile to a document-query plan,
+`@type`/`rdf:type` naming an element — `rdf:type=elmt:<id>` — selects the objects `instantiate`
+created, answered with their `path`, and a property the metamodel does not declare fails
+`INVALID_ARGUMENT` with a `QueryOutcome` detail rather than answering empty); `render_document`/`render_model_document` render query-backed documents
 (`opensysml-qvts`). `session_open` takes a `root` for the workspace a session resolves against.
 
 **`lsp` — the workspace under `-root`** (21): `workspace_info`, `workspace_diagnostics`,
