@@ -63,6 +63,15 @@ several values takes a sequence (`qualifiedName = ("A::x", "A::y")`). A query ma
 `in` parameters; `-run-query` binds them as `name=expression`, and an object created by
 `-instantiate` in the same run is bound by its name.
 
+In nightly builds and the release after v0.12.1 a query need not be authored in a file: every
+run-query surface also takes the query *body* inline — one expression over the same operations,
+compiled and run through the same path as a named query, in the loaded model's context (the
+library imported, the model's names, the session's objects behind `Objects`/`Verdicts`/`States`/
+`Events`). An inline text declares no `in` parameters, so bindings stay with named queries; the
+named and inline forms are mutually exclusive on every surface. A parse or plan fault is reported
+at a position within the inline text (`inline query 1:30: expected ')'`), never as a model
+diagnostic; path and model faults keep the same `QueryOutcome` as a named query's.
+
 ### The `DocumentQueries` operations
 
 | Group | Operation (parameters) |
@@ -96,6 +105,7 @@ sysml lander.sysml queries.sysml -run-query QVTSDemo::CabinMass
 sysml lander.sysml queries.sysml -run-query QVTSDemo::EmptySelection      # ✓ … returned 0 rows, exit 0
 sysml lander.sysml queries.sysml -run-query QVTSDemo::CabinMass -json      # checks[0].table
 printf '%%run-query QVTSDemo::CabinMass\n' | sysml lander.sysml queries.sysml   # REPL, same lines
+sysml lander.sysml -run-inline-query 'Project(WhereType(Descendants(Named("Lander")), "PartUsage"), ("qualifiedName", "mass"))'   # inline body, no queries.sysml: ✓ Inline query returned …
 ```
 
 Pass every file the query reaches (the model *and* the file declaring the query). The
@@ -111,7 +121,8 @@ Pass every file the query reaches (the model *and* the file declaring the query)
 (`rows`/`values` keep the formatted lines; a successful run has no `outcome` member — see
 Limits.) Other surfaces:
 
-- **REPL**: `%run-query NAME [p=expr…]` (`opensysml-repl`); the same `✓`/`path error` lines.
+- **REPL**: `%run-query NAME [p=expr…]` or `%run-query inline <expression>` (`opensysml-repl`);
+  the same `✓`/`path error` lines (an inline run is reported as `Inline query`).
 - **gRPC**: `RunDocumentQuery(model_hash, query_id, bindings[])` answers typed rows
   (`DocumentValue`: `element_id`, strings, numbers, `quantity`, `verdict`, `object`, `state`,
   `event`); `NOT_FOUND` when the model declares no such query, `INVALID_ARGUMENT` when the
@@ -124,8 +135,12 @@ Limits.) Other surfaces:
   spellings first) with the whole count in `membersTotal`/`featuresTotal`/`kindsTotal`, while
   `-json` and `%run-query` keep the whole list; `RenderDocument` carries it too when a
   section's query fails.
-  Capability `document_query` (`opensysml-service`).
-- **MCP**: `run_document_query` (runtime group; the RPC's bindings and rows) and `query`
+  Capability `document_query` (`opensysml-service`). `RunDocumentQueryRequest.inline_query`
+  (additive field 4; exactly one of `query_id`/`inline_query`) runs an inline body under the
+  capability `inline_document_query`; a parse/plan fault is `INVALID_ARGUMENT` positioned
+  `inline query <line>:<col>`.
+- **MCP**: `run_document_query` (runtime group; the RPC's bindings and rows; `inlineQuery` in
+  place of `queryId` for an inline body) and `query`
   (API & Services Query with `orderBy`); `render_document`/`render_model_document` for
   documents (`opensysml-mcp`).
 - **OSLC text and the API `Query`** (`sysml -query`, `%query`, the `Query` RPC, the MCP
@@ -138,7 +153,12 @@ Limits.) Other surfaces:
   `opensysml-cli`, `opensysml-service`).
 - **Clients**: every language client runs a query (`model.run_document_query(query_id,
   bindings)` in Python, `runDocumentQuery` in Node/Java, `RunDocumentQuery` in Go,
-  `run_document_query` in Rust/Julia/MATLAB) and answers typed rows, but in 0.12.0 **none
+  `run_document_query` in Rust/Julia/MATLAB) and answers typed rows; with the
+  `inline_document_query` capability each also runs inline text — Python
+  `model.run_document_query(inline_query=expr)`, Node/Java `runInlineDocumentQuery(expr)`, Go
+  `RunInlineDocumentQuery(ctx, model, expr, bindings...)`, Rust
+  `run_inline_document_query(expr, &[])`, Julia `run_document_query(model; inline_query=expr)`,
+  MATLAB `runDocumentQuery(model, '', 'inlineQuery', expr)` — but in 0.12.0 **none
   decodes the `QueryOutcome` detail** — a failed query surfaces as the service's status error
   with the outcome lines in its message, not as a typed result. Parse the CLI's `-json` when a
   pipeline needs the structured record.

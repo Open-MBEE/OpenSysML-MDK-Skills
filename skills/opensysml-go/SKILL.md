@@ -75,6 +75,12 @@ In nightly builds and the release after v0.12.1, `Query` / `QueryOSLC` compiles 
 client-side with a `*StatusError` (`capability "check" is unavailable`) when the service does not
 advertise the capability.
 
+Nightly builds and the release after v0.12.1 also run a query body written inline, with no
+`calc def` in the model: `RunInlineDocumentQuery(ctx, model, expr, bindings...)`, guarded by `CapabilityInlineDocumentQuery`. The client checks the server's
+`inline_document_query` capability first (`GetServerInfo`); the named and inline forms are
+exclusive, an inline text takes no bindings, and a fault in the text is the service's
+INVALID_ARGUMENT positioned `inline query <line>:<col>` (`opensysml-qvts`).
+
 ## Operations on `Client`
 
 | Need | Method |

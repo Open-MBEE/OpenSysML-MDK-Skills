@@ -54,6 +54,12 @@ client decodes the `QueryOutcome` error detail — a query the model cannot answ
 (`opensysml-qvts`).
 In nightly builds and the release after v0.12.1, `model.query(oslc=…)` / `model.query(where=…, select=…)` compiles the structured `Query` or OSLC text into the same document-query plans the QVTS evaluator runs: values compare typed, every property the metamodel declares is queryable by name and nests by `.` (`owner.qualifiedName`), an unknown property is the service's `invalid_argument` carrying the `QueryOutcome` detail (read the message; the client does not decode it), and `@type` naming an element IRI (`<urn:sysmlv2:element:Garage__Wheel>`, OSLC `rdf:type=elmt:Garage__Wheel`) selects the held objects of that element, each answered under `QueryElement.path` (`Garage::car.wheels[2]`; empty for a declared element). OSLC `or` stays refused (`OSLC Query has no "or"`); scoped terms, nested `oslc.select`, `oslc.select=*`, `oslc.searchTerms` and `sysx:multiplicityLower`/`sysx:multiplicityUpper` are accepted (`docs/reference/oslc-query.md`).
 
+Nightly builds and the release after v0.12.1 also run a query body written inline, with no
+`calc def` in the model: `model.run_document_query(inline_query="Project(…)")` (keyword only; exclusive with `query_id`), guarded by `CAPABILITY_INLINE_DOCUMENT_QUERY`. The client checks the server's
+`inline_document_query` capability first (`GetServerInfo`); the named and inline forms are
+exclusive, an inline text takes no bindings, and a fault in the text is the service's
+INVALID_ARGUMENT positioned `inline query <line>:<col>` (`opensysml-qvts`).
+
 Verified against the 0.12.0 release build (`sysml v0.11.0-1980-g72c5b132f`, built from `release/0.12.0`) with the client installed from `client/python` of the same checkout.
 Rows marked *nightly* arrived after 0.10.1 and are in `opensysml==0.12.0` on PyPI: the
 `opensysml==0.10.1` package has no `check_action` (`AttributeError`), whatever service it talks

@@ -144,6 +144,14 @@ fails. No 0.12.0 client library decodes the detail; read the message, or run the
 primitive operators (`=`, `<`, `>`, `<=`, `>=`, `in`, `instanceOf`) and `orderBy`
 (`query_order_by`). Writing queries: `opensysml-qvts`.
 
+`RunDocumentQuery {modelHash, inlineQuery}` (proto field `inline_query = 4`, additive; nightly
+builds and the release after v0.12.1) runs the query body written inline instead of a named
+query, through the same plan and executor; a request naming both or neither is
+`INVALID_ARGUMENT`. The server advertises it as the capability `inline_document_query` in
+`GetServerInfo.capabilities` (named queries still need only `document_query`); check it before
+sending `inlineQuery`. Text that does not parse or plan is `INVALID_ARGUMENT` with the position
+`inline query <line>:<col>`; a path or model fault keeps the `QueryOutcome` detail.
+
 In nightly builds and the release after v0.12.1, `Query {modelHash, query | oslcQuery}` is a
 *translator* into the same document-query plans: both the structured `Query` and OSLC text
 compile to `WhereType`/`WhereName`/`WhereFeature`/`Project`/`OrderBy`/`WhereText` and run through
