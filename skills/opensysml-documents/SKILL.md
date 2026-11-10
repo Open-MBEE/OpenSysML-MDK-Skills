@@ -169,7 +169,7 @@ REPL: `%list`, `%documents`, `%views [diagrams] [kind...]`, `%view NAME`,
 `opensysml-node`, …); HTML needs the service to advertise `render_document_html`, AsciiDoc
 `render_document_asciidoc`; a failed query inside `RenderDocument` carries a `QueryOutcome`
 error detail no 0.12.0 client decodes (its lines are in the error message); the
-`sysml-wasm` module serves `RenderView` too (`opensysml-wasm`). Jupyter shows Mermaid/HTML
+`sysml-wasm` module serves `RenderView` too (`opensysml-wasm`). In nightly builds and the release after v0.12.1 a `QVTS::QueryResult` view — a query's answer written with `-as-view` — renders as a document: `-render-document Pkg::view` in any `-doc-form`, or `RenderViewRequest.form` (`markdown`, `html`, `asciidoc`) over the service, the four attributes as the header and the exposed elements as one table (`opensysml-qvts`). Jupyter shows Mermaid/HTML
 inline (`opensysml-jupyter`).
 
 ## Troubleshooting

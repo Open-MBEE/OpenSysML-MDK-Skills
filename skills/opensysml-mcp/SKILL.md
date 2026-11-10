@@ -126,7 +126,7 @@ queryId, bindings}` — or `inlineQuery` in place of `queryId` to run the query 
 (capability `inline_document_query`, nightly builds and the release after v0.12.1) — answers a query's rows (`structuredContent.columns[].name`, `rows[].cells[]
 .values[]`, `modelHash`) and, when the model cannot answer it, `isError: true` with
 `FAILED_PRECONDITION: query X reads feature mass of …, which has no such feature` — the outcome
-lines, not the structured `QueryOutcome`; `query` runs an API & Services Query or OSLC text (`orderBy`
+lines, not the structured `QueryOutcome`; in nightly builds and the release after v0.12.1 `"asView": true` on `run_document_query` or `query` also answers the result as a `QVTS::QueryResult` view in `structuredContent.resultView` (SysML text; capability `query_result_view`), and `render_model_view` with `"form": "markdown"` (`html`, `asciidoc`) renders such a view, once its text is among the model's `sources`, as a document in the field of that name (`opensysml-qvts`); `query` runs an API & Services Query or OSLC text (`orderBy`
 supported; in nightly builds and the release after v0.12.1 both compile to a document-query plan,
 `@type`/`rdf:type` naming an element — `rdf:type=elmt:<id>` — selects the objects `instantiate`
 created, answered with their `path`, and a property the metamodel does not declare fails

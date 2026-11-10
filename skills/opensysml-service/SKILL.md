@@ -152,6 +152,15 @@ query, through the same plan and executor; a request naming both or neither is
 sending `inlineQuery`. Text that does not parse or plan is `INVALID_ARGUMENT` with the position
 `inline query <line>:<col>`; a path or model fault keeps the `QueryOutcome` detail.
 
+`RunDocumentQueryRequest.as_view` (field 5) and `QueryRequest.as_view` (field 4), additive in
+nightly builds and the release after v0.12.1, fill `result_view.text` in the response with the
+answer written as a `QVTS::QueryResult` view; a failed query carries a `QueryResultView {text}`
+status detail beside its `QueryOutcome`. `RenderView` of such a view answers `header[]`
+(`name`/`value` for `query`, `source`, `outcome`, `provenance`) with the exposed elements as
+`rows`, and `RenderViewRequest.form` (`markdown`, `html`, `asciidoc`) fills the matching
+response field with the view as a document — `INVALID_ARGUMENT` for a view that is not a
+`QueryResult`. All of it is the capability `query_result_view` (`opensysml-qvts`).
+
 In nightly builds and the release after v0.12.1, `Query {modelHash, query | oslcQuery}` is a
 *translator* into the same document-query plans: both the structured `Query` and OSLC text
 compile to `WhereType`/`WhereName`/`WhereFeature`/`Project`/`OrderBy`/`WhereText` and run through
