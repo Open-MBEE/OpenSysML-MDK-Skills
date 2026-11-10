@@ -133,10 +133,12 @@ the message and a `QueryOutcome` error detail (`kind` `pathError`|`modelError`, 
 `failures[] {step, expected, frontier {at, members, features, kinds, nearest}}`,
 `findings[] {step, element, constraint, observed}`, `path_failures[]`) — the record the CLI
 writes as `checks[].outcome`. In nightly builds and the release after v0.12.1 the detail is
-bounded to fit a status trailer: each frontier lists at most eight members, features or kinds
-(the spellings nearest the step's argument first) and `frontier.membersTotal` /
-`featuresTotal` / `kindsTotal` give the whole count; the CLI's `-json` record and the REPL
-carry the whole list. `RenderDocument` attaches the same detail when a section's query
+bounded to fit a status trailer: it holds the first eight failures, findings and path failures
+(`failuresTotal` / `findingsTotal` / `pathFailuresTotal` count them all), each frontier lists
+at most eight members, features or kinds (the spellings nearest the step's argument first)
+with `frontier.membersTotal` / `featuresTotal` / `kindsTotal` for the whole count, and the
+missing-feature message names the first eight elements a fan-out failed on and counts the
+rest; the CLI's `-json` record and the REPL carry the whole list. `RenderDocument` attaches the same detail when a section's query
 fails. No 0.12.0 client library decodes the detail; read the message, or run the CLI with
 `-json` for the structured record. `Query` (the API & Services Query resource) takes all seven
 primitive operators (`=`, `<`, `>`, `<=`, `>=`, `in`, `instanceOf`) and `orderBy`
