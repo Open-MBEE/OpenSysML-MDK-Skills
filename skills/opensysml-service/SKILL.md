@@ -138,8 +138,8 @@ bounded to fit a status trailer: it holds the first eight failures, findings and
 at most eight members, features or kinds (the spellings nearest the step's argument first)
 with `frontier.membersTotal` / `featuresTotal` / `kindsTotal` for the whole count, and the
 missing-feature message names the first eight elements a fan-out failed on and counts the
-rest; the CLI's `-json` record and the REPL carry the whole list. `RenderDocument` attaches the same detail when a section's query
-fails. No 0.12.0 client library decodes the detail; read the message, or run the CLI with
+rest; the CLI's `-json` record and the REPL carry the whole list. `RenderDocument` attaches the
+same detail when a section's query fails. No 0.12.0 client library decodes the detail; read the message, or run the CLI with
 `-json` for the structured record. `Query` (the API & Services Query resource) takes all seven
 primitive operators (`=`, `<`, `>`, `<=`, `>=`, `in`, `instanceOf`) and `orderBy`
 (`query_order_by`). Writing queries: `opensysml-qvts`.
