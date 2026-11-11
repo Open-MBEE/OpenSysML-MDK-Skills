@@ -163,6 +163,58 @@ Limits.) Other surfaces:
   with the outcome lines in its message, not as a typed result. Parse the CLI's `-json` when a
   pipeline needs the structured record.
 
+## Writing the answer as a view
+
+In nightly builds and the release after v0.12.1 every query surface can write its answer as one
+`QVTS::QueryResult` view (the bundled `OpenSysML Libraries/QVTS.sysml`: `enum def Outcome
+{ established; pathError; modelError; }` and `view def QueryResult` with `query`, `source`,
+`outcome`, `provenance`):
+
+```bash
+sysml lander.sysml queries.sysml -run-query QVTSDemo::CabinMass -as-view -          # print the view in place of the rows
+sysml lander.sysml queries.sysml -run-query QVTSDemo::CabinMass -as-view cabin.sysml  # rows as usual, then: wrote cabin.sysml (QueryResult view, 375 bytes)
+sysml lander.sysml -query 'oslc.where=rdf:type=sysml:PartUsage' -as-view -           # OSLC/API Query: package AnswerResult, view answer
+printf '%%run-query -as-view QVTSDemo::CabinMass\n' | sysml lander.sysml queries.sysml   # REPL; also `%run-query -as-view inline …`, `%query -as-view …`
+```
+
+```sysml
+package CabinMassResult {
+	private import QVTS::*;
+
+	view cabinMass : QueryResult {
+		expose Lander::lander::cabin;
+		attribute :>> query = "QVTSDemo::CabinMass";
+		attribute :>> source = "lander.sysml queries.sysml";
+		attribute :>> outcome = Outcome::established;
+		attribute :>> provenance = "sha256:110e03c5…";
+	}
+}
+```
+
+- The view **exposes each selected element once**, by qualified name, in row order; projected
+  cells are not copied (a document over the view reads them again). A name the view's own
+  scope would capture (its own name, `Outcome`, a feature such as `source`) is written from
+  the root: `expose $::source::cabin;`.
+- `query` is the named query's qualified name plus bindings, the inline expression, or the
+  OSLC/API query text; `source` the files as given (the model hash over the service);
+  `provenance` the model hash, followed by `; step <Step>(…)` for a failed query. The same
+  model and query write the same bytes.
+- An **empty selection** is `Outcome::established` with no `expose`. A **failed** query still
+  writes its view and still exits `2`: `Outcome::pathError` exposing each frontier's `at`
+  (`MisspelledName` → `expose Lander::lander;`), `Outcome::modelError` exposing each finding's
+  element; a failure about no element (an OSLC property no element type has) exposes nothing.
+- **Service and clients**: `as_view` on `RunDocumentQueryRequest`/`QueryRequest` fills
+  `result_view.text`; a failed query carries a `QueryResultView` status detail beside its
+  `QueryOutcome`; capability `query_result_view` (`opensysml-service`). MCP `run_document_query`
+  and `query` take `asView` and answer `resultView` (`opensysml-mcp`). Go, Python and Java
+  bind it (`opensysml-go`, `opensysml-python`, `opensysml-java`); Node, Rust, Julia and MATLAB
+  do not yet — send `as_view` over Connect JSON there.
+- **Rendering**: add the view's file to the model and it renders like any view —
+  `sysml lander.sysml queries.sysml cabin.sysml -render-document CabinMassResult::cabinMass`
+  (`-doc-form markdown|html|asciidoc|pdf`) writes the four attributes as a header and the
+  exposed elements as one table (`Element | Kind | Type | Declared in`); `RenderViewRequest.form`
+  does the same over the service and is refused for a view that is not a `QueryResult`.
+
 ## Reading a failure
 
 A **path error** names the step, what it expected and the *frontier* — the last element that

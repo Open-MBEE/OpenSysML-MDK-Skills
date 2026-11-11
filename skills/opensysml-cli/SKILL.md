@@ -144,6 +144,12 @@ It is repeatable and runs in order with `-run-query`; an inline text takes no bi
 or plan fault is reported as `inline query <line>:<col>: …` with a caret into the text, exit 2, and is
 never a model diagnostic.
 
+`-as-view FILE` (nightly builds and the release after v0.12.1) writes the answer of each
+`-run-query`, `-run-inline-query` or `-query` as a `QVTS::QueryResult` view into `FILE` beside
+the usual report (`wrote FILE (QueryResult view, N bytes)`); `-as-view -` prints the view in
+place of the rows. A failed query still writes its view (`Outcome::pathError`/`modelError`)
+and still exits 2 (`opensysml-qvts`).
+
 `-query` takes OSLC Query 3.0 text (`oslc.where=…&oslc.select=…&oslc.orderBy=…`, or bare
 `oslc.where` terms) and prints one line per element — `Garage::Car::wheels  PartUsage
 sysml:name=wheels  sysml:owner{sysml:qualifiedName}=Garage::Car` — in the query's own spelling;

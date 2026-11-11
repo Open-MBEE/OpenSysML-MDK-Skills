@@ -148,6 +148,9 @@ documents can need external tools; see `opensysml-documents`.
 - `%run-query` answers `query X names no element …` / `reads feature m of …, which has no
   such feature`: the query is wrong about the model (a path error), not the session — the
   `nearest:` hint names the spelling; `returned 0 rows` is a valid empty answer.
+- `%run-query -as-view NAME [p=expr…]`, `%run-query -as-view inline <expression>` and
+  `%query -as-view OSLC` (nightly builds and the release after v0.12.1) print the answer as a
+  `QVTS::QueryResult` view in place of the rows or matches (`opensysml-qvts`).
 - `%run-query inline <expression>` runs the body without a named query; the word `inline` is
   only the inline form when what follows is an expression — `%run-query inline root=car`
   (first argument shaped `<parameter>=<expression>`) runs a query actually named `inline`. A
