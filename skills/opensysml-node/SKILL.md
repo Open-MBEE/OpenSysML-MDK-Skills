@@ -47,6 +47,8 @@ client decodes the `QueryOutcome` error detail — a query the model cannot answ
 (`opensysml-qvts`).
 In nightly builds and the release after v0.12.1, `model.query({ oslc })` / `model.query({ where, select })` compiles the structured `Query` or OSLC text into the same document-query plans the QVTS evaluator runs: values compare typed, every property the metamodel declares is queryable by name and nests by `.` (`owner.qualifiedName`), an unknown property is the service's `invalid_argument` carrying the `QueryOutcome` detail (read the message; the client does not decode it), and `@type` naming an element IRI (`<urn:sysmlv2:element:Garage__Wheel>`, OSLC `rdf:type=elmt:Garage__Wheel`) selects the held objects of that element, each answered under `QueryElement.path` (`Garage::car.wheels[2]`; empty for a declared element). OSLC `or` stays refused (`OSLC Query has no "or"`); scoped terms, nested `oslc.select`, `oslc.select=*`, `oslc.searchTerms` and `sysx:multiplicityLower`/`sysx:multiplicityUpper` are accepted (`docs/reference/oslc-query.md`).
 
+In nightly builds and the release after v0.12.1, the service can write a query's answer as a `QVTS::QueryResult` view (`as_view` on `RunDocumentQueryRequest`/`QueryRequest` → `result_view.text`, capability `query_result_view`) and render one as a document (`RenderViewRequest.form`); this client does not bind either yet — use `sysml -as-view`, or call the RPC over Connect JSON (`opensysml-service`, `opensysml-qvts`).
+
 Nightly builds and the release after v0.12.1 also run a query body written inline, with no
 `calc def` in the model: `model.runInlineDocumentQuery("Project(…)")`. The client checks the server's
 `inline_document_query` capability first (`GetServerInfo`); the named and inline forms are
